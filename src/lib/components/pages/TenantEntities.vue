@@ -79,8 +79,6 @@
                       </button-overlay>
                     </div>
                   </div>
-
-
                   <ul class="gradings-ul">
                     <li v-for="(grading, gradingIndex) in submission.fullTextJson.gradings"
                         :key="gradingIndex">
@@ -124,8 +122,8 @@
                       </div>
                       <div v-else>
                         <div>
-                          <b-form-input size="sm" v-model="grading.fullTextJson.grade"/>
-                          <b-form-input size="sm" v-model="grading.fullTextJson.comment"/>
+                          <b-form-input size="sm" v-model="entitiesMap[grading.entityId].fullTextJson.grade"/>
+                          <b-form-input size="sm" v-model="entitiesMap[grading.entityId].fullTextJson.comment"/>
                         </div>
                         <div class="mt-3">
                           <b-button variant="primary" size="sm"
@@ -148,7 +146,7 @@
                 </div>
                 <div v-else>
                   <div>
-                    <b-form-textarea size="sm" v-model="submission.fullTextJson.text"/>
+                    <b-form-textarea size="sm" v-model="entitiesMap[submission.entityId].fullTextJson.text"/>
                   </div>
                   <div class="mt-3">
                     <b-button variant="primary" size="sm"
@@ -282,10 +280,7 @@ export default {
           edit: true,
           fullTextJson: {
             "assignmentId": assignment.entityId,
-            "symptoms": "",
-            "allergies": "",
-            "bloodPressure": "",
-            "randomBloodSugar": "",
+            "text": "",
             "gradings": []
           }
         },
