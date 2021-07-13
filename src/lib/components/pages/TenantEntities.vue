@@ -18,8 +18,8 @@
                   <b-link :href="href" v-on:click="navigate">{{ assignment.ownerId }}</b-link>
                 </router-link>
               </small>
-              <div>
-                <b-button v-if="hasPermission(assignment, permissionTypeEditor)" variant="link" size="sm"
+              <div v-if="hasPermission(assignment, permissionTypeEditor)">
+                <b-button variant="link" size="sm"
                           v-b-tooltip.hover title="Share"
                           v-b-modal="`modal-assignment-share-${assignment.entityId}`">
                   <b-icon icon="share"/>
@@ -97,9 +97,9 @@
                               <b-link :href="href" v-on:click="navigate">{{ grading.ownerId }}</b-link>
                             </router-link>
                           </small>
-                          <div>
-                            <b-button variant="link" size="sm" v-if="hasPermission(grading, permissionTypeEditor)"
-                                      v-on:click="onClickEditEntity(grading)" v-b-tooltip.hover title="Edit">
+                          <div v-if="hasPermission(grading, permissionTypeEditor)">
+                            <b-button variant="link" size="sm" v-on:click="onClickEditEntity(grading)" v-b-tooltip.hover
+                                      title="Edit">
                               <b-icon icon="pencil"/>
                             </b-button>
                             <b-button variant="link" size="sm" v-if="hasPermission(grading, permissionTypeEditor)"
@@ -136,7 +136,7 @@
                   </ul>
 
                   <b-button
-                      v-if="(hasProfessorRole || hasResearchAssistantRole) && hasPermission(submission, permissionTypeEditor)"
+                      v-if="(hasProfessorRole || hasResearchAssistantRole) && hasPermission(submission, permissionTypeViewer)"
                       variant="link" size="sm"
                       v-on:click="addNewGrading(assignment, submission)">
                     + Create new submission grading
@@ -158,12 +158,11 @@
               </li>
             </ul>
             <b-button
-                v-if="hasStudentRole && hasPermission(assignment, permissionTypeEditor) && !hasAlreadySubmitted(assignment)"
+                v-if="hasStudentRole && hasPermission(assignment, permissionTypeViewer) && !hasAlreadySubmitted(assignment)"
                 variant="link" size="sm"
                 v-on:click="addNewSubmission(assignment)">
               + Create new submission
             </b-button>
-
           </div>
         </div>
       </div>
@@ -215,6 +214,7 @@ export default {
       entitiesMap: {},
       assignmentEntityIds: [],
 
+      permissionTypeViewer,
       permissionTypeEditor,
       // permissionTypeShare
     }
@@ -463,14 +463,18 @@ export default {
       return entity;
     },
     hasPermission({entityId}, permissionTypeId) {
-      const status = this.$store.getters["sharing/getUserAccessStatus"]({
+      let status = this.$store.getters["sharing/getUserAccessStatus"]({
         clientId: this.clientId, entityId, permissionTypeId, username: this.currentUsername
       });
 
       if (status) {
         return status;
       } else {
-        return false;
+        if (!status && permissionTypeId === permissionTypeViewer) {
+          return this.hasPermission({entityId}, permissionTypeEditor);
+        } else {
+          return false;
+        }
       }
     },
     refreshData() {
