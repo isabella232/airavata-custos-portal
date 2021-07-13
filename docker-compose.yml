@@ -1,14 +1,14 @@
-version: "3.3"
+version: '3.3'
 services:
   web:
-    image: "apachecustos/custos-admin-portal:latest"
+    image: 'apachecustos/custos-admin-portal:latest'
     ports:
-      - "443:443"
+      - '443:443'
     volumes:
-      - /Users/isururanawaka/Documents/Airavata_Repository/airavata-custos-portal/custos-demo-gateway/privkey.pem:/etc/nginx/privkey.pem
-      - /Users/isururanawaka/Documents/Airavata_Repository/airavata-custos-portal/custos-demo-gateway/fullchain.pem:/etc/nginx/fullchain.pem
+      - /Users/isururanawaka/Documents/Airavata_Repository/airavata-custos-portal/privkey.pem:/etc/nginx/privkey.pem
+      - /Users/isururanawaka/Documents/Airavata_Repository/airavata-custos-portal/fullchain.pem:/etc/nginx/fullchain.pem
     environment:
-      VUE_APP_CLIENT_ID: 'custos-6nwoqodstpe5mvcq09lh-10000101'
-      VUE_APP_CLIENT_SEC: 'GiKrGGVLW7zDoPZwzgCiFM7WUz3PhIumTmFxAkr7'
+      VUE_APP_CLIENT_ID: ''
+      VUE_APP_CLIENT_SEC: ''
       VUE_APP_REDIRECT_URI: 'http://localhost:8080/callback'
-      VUE_APP_CUSTOS_TOKEN_ENDPOINT: 'https://custos.scigap.org/apiserver/identity-management/v1.0.0/token'
+
