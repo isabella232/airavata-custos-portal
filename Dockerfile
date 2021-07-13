@@ -3,7 +3,7 @@ FROM node:lts-alpine as build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
-COPY custos-demo-gateway .
+COPY ./ .
 RUN npm run build
 
 # production stage
