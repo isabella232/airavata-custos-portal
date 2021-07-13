@@ -1,12 +1,12 @@
 <template>
   <TenantHome :title="title" :breadcrumb-links="breadcrumbLinks" :errors="errors">
-    <template #header-right v-if="hasPatientRole">
+    <template #header-right v-if="hasProfessorRole">
       <router-link :to="`/tenants/${clientId}/entities/new`" v-slot="{href, navigate}" tag="">
-        <b-button variant="primary" @click="navigate">Make an Appointment</b-button>
+        <b-button variant="primary" @click="navigate">Create New Assignment</b-button>
       </router-link>
     </template>
-    <table-overlay-info :rows="5" :columns="1" :data="appointments"
-                        v-if="hasPatientRole || hasNurseRole || hasDoctorRole">
+    <table-overlay-info :rows="5" :columns="1" :data="assignments"
+                        v-if="hasStudentRole || hasResearchAssistantRole || hasProfessorRole">
       <b-table-simple>
         <b-thead>
           <b-tr>
@@ -16,47 +16,47 @@
           </b-tr>
         </b-thead>
         <b-tbody>
-          <b-tr v-for="(appointment, appointmentIndex) in appointments" :key="appointmentIndex">
-            <!--          {{appointment}}-->
+          <b-tr v-for="(assignment, assignmentIndex) in assignments" :key="assignmentIndex">
+            <!--          {{assignment}}-->
             <b-td>
               <div>
-                <strong>Patient :</strong>
-                {{ appointment.fullTextJson.patient }}
+                <strong>Student :</strong>
+                {{ assignment.fullTextJson.student }}
               </div>
               <div>
                 <strong>Date :</strong>
-                {{ appointment.fullTextJson.visitDate }}
+                {{ assignment.fullTextJson.visitDate }}
               </div>
               <div>
                 <strong>Reason :</strong>
-                {{ appointment.fullTextJson.reason }}
+                {{ assignment.fullTextJson.reason }}
               </div>
               <div>
-                <strong>Doctor :</strong>
-                {{ appointment.fullTextJson.doctorId }}
+                <strong>Professor :</strong>
+                {{ assignment.fullTextJson.professorId }}
               </div>
               <div style="display: flex; flex-direction: row;">
                 <small class="text-left" style="padding-top: 14px;color: #495057;">
-                  {{ appointment.createdAt }} by
-                  <router-link :to="`/tenants/${clientId}/users/${appointment.ownerId}`" v-slot="{href, navigate}">
-                    <b-link :href="href" v-on:click="navigate">{{ appointment.ownerId }}</b-link>
+                  {{ assignment.createdAt }} by
+                  <router-link :to="`/tenants/${clientId}/users/${assignment.ownerId}`" v-slot="{href, navigate}">
+                    <b-link :href="href" v-on:click="navigate">{{ assignment.ownerId }}</b-link>
                   </router-link>
                 </small>
                 <div>
-                  <b-button v-if="hasPermission(appointment, permissionTypeEditor)" variant="link" size="sm"
+                  <b-button v-if="hasPermission(assignment, permissionTypeEditor)" variant="link" size="sm"
                             v-b-tooltip.hover title="Share"
-                            v-b-modal="`modal-appointment-share-${appointment.entityId}`">
+                            v-b-modal="`modal-assignment-share-${assignment.entityId}`">
                     <b-icon icon="share"/>
                   </b-button>
-                  <modal-share-entity :entity-id="appointment.entityId" :client-id="clientId"
-                                      :modal-id="`modal-appointment-share-${appointment.entityId}`"
-                                      title="Share the appointment"/>
+                  <modal-share-entity :entity-id="assignment.entityId" :client-id="clientId"
+                                      :modal-id="`modal-assignment-share-${assignment.entityId}`"
+                                      title="Share the assignment"/>
                 </div>
               </div>
             </b-td>
             <b-td>
               <ul class="history-ul">
-                <li v-for="(history, historyIndex) in appointment.fullTextJson.histories" :key="historyIndex">
+                <li v-for="(history, historyIndex) in assignment.fullTextJson.histories" :key="historyIndex">
                   <div v-if="!history.edit">
                     <div>
                       <strong>Symptoms :</strong>
@@ -92,7 +92,7 @@
                         </b-button>
                         <modal-share-entity :entity-id="history.entityId" :client-id="clientId"
                                             :modal-id="`modal-history-share-${history.entityId}`"
-                                            title="Share Patient's History"/>
+                                            title="Share Student's History"/>
                       </div>
                     </div>
                   </div>
@@ -115,21 +115,22 @@
                     </div>
                     <div class="mt-3">
                       <b-button variant="primary" size="sm"
-                                v-on:click="saveHistory(appointment, history);">
+                                v-on:click="saveHistory(assignment, history);">
                         Save
                       </b-button>
                     </div>
                   </div>
                 </li>
               </ul>
-              <b-button v-if="hasNurseRole && hasPermission(appointment, permissionTypeEditor)" variant="link" size="sm"
-                        v-on:click="addNewHealthCheck(appointment)">
+              <b-button v-if="hasResearchAssistantRole && hasPermission(assignment, permissionTypeEditor)"
+                        variant="link" size="sm"
+                        v-on:click="addNewHealthCheck(assignment)">
                 + Create new health check
               </b-button>
             </b-td>
             <b-td>
               <ul class="prescriptions-ul">
-                <li v-for="(prescription, prescriptionIndex) in appointment.fullTextJson.prescriptions"
+                <li v-for="(prescription, prescriptionIndex) in assignment.fullTextJson.prescriptions"
                     :key="prescriptionIndex">
                   <div v-if="!prescription.edit">
                     <div>
@@ -206,16 +207,16 @@
                     </div>
                     <div class="mt-3">
                       <b-button variant="primary" size="sm"
-                                v-on:click="savePrescription(appointment, prescription);">Save
+                                v-on:click="savePrescription(assignment, prescription);">Save
                       </b-button>
                     </div>
                   </div>
                 </li>
               </ul>
 
-              <b-button v-if="hasDoctorRole && hasPermission(appointment, permissionTypeEditor)" variant="link"
+              <b-button v-if="hasProfessorRole && hasPermission(assignment, permissionTypeEditor)" variant="link"
                         size="sm"
-                        v-on:click="addNewPrescription(appointment)">
+                        v-on:click="addNewPrescription(assignment)">
                 + Add new prescription
               </b-button>
             </b-td>
@@ -228,25 +229,25 @@
 </template>
 
 <script>
-import store from "../../new-service/store"
-import TenantHome from "@/components/admin-portal/TenantHome";
-import TableOverlayInfo from "@/components/table-overlay-info";
-import config from "@/config";
-import ModalShareEntity from "@/components/admin-portal/modals/modal-share-entity";
+import store from "../../store"
+import TenantHome from "./TenantHome";
+import TableOverlayInfo from "../overlay/table-overlay-info";
+import config from "../../../config";
+import ModalShareEntity from "../modals/modal-share-entity";
 // import ModalShareEntity from "@/components/admin-portal/modals/modal-share-entity";
 // import ButtonOverlay from "@/components/button-overlay";
 
 
-const entityTypeIdAppointment = config.value('entityTypeIdAppointment');
-const entityTypeIdPatientHistory = config.value('entityTypeIdPatientHistory');
-const entityTypeIdPrescription = config.value('entityTypeIdPrescription');
+const entityTypeIdAssignment = config.value('entityTypeIdAssignment');
+const entityTypeIdStudentSubmission = config.value('entityTypeIdStudentSubmission');
+const entityTypeIdGrading = config.value('entityTypeIdGrading');
 
-const clientRoleDoctor = config.value('clientRoleDoctor');
-const clientRoleNurse = config.value('clientRoleNurse');
-const clientRolePatient = config.value('clientRolePatient');
+const clientRoleProfessor = config.value('clientRoleProfessor');
+const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
+const clientRoleStudent = config.value('clientRoleStudent');
 
-const groupIdDoctor = config.value('groupIdDoctor');
-// const groupIdNurse = config.value('groupIdNurse');
+const groupIdProfessor = config.value('groupIdProfessor');
+// const groupIdResearchAssistant = config.value('groupIdResearchAssistant');
 
 const permissionTypeViewer = config.value('permissionTypeViewer');
 const permissionTypeEditor = config.value('permissionTypeEditor');
@@ -267,7 +268,7 @@ export default {
       ],
 
       entitiesMap: {},
-      appointmentEntityIds: [],
+      assignmentEntityIds: [],
 
       permissionTypeEditor,
       // permissionTypeShare
@@ -275,7 +276,7 @@ export default {
   },
   computed: {
     title() {
-      if (this.hasPatientRole || this.hasNurseRole || this.hasDoctorRole) {
+      if (this.hasStudentRole || this.hasResearchAssistantRole || this.hasProfessorRole) {
         return "Appointments";
       } else {
         return "Unauthorized";
@@ -284,8 +285,8 @@ export default {
     clientId() {
       return this.$route.params.clientId;
     },
-    appointments() {
-      return this.appointmentEntityIds.map(entityId => this.getEntity({entityId}));
+    assignments() {
+      return this.assignmentEntityIds.map(entityId => this.getEntity({entityId}));
     },
     entities() {
       return this.$store.getters["entity/getEntities"]({clientId: this.clientId, ownerId: this.currentUsername})
@@ -299,24 +300,24 @@ export default {
     currentUser() {
       return this.$store.getters["user/getUser"]({clientId: this.clientId, username: this.currentUsername})
     },
-    hasDoctorRole() {
-      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleDoctor) >= 0;
+    hasProfessorRole() {
+      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleProfessor) >= 0;
     },
-    hasNurseRole() {
-      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleNurse) >= 0;
+    hasResearchAssistantRole() {
+      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleResearchAssistant) >= 0;
     },
-    hasPatientRole() {
-      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRolePatient) >= 0;
+    hasStudentRole() {
+      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleStudent) >= 0;
     }
   },
   methods: {
-    addNewHealthCheck(appointment) {
-      const newHealthCheckEntityId = `${appointment.entityId}_${window.performance.now()}`;
+    addNewHealthCheck(assignment) {
+      const newHealthCheckEntityId = `${assignment.entityId}_${window.performance.now()}`;
       this.entitiesMap = {
         ...this.entitiesMap,
         [newHealthCheckEntityId]: {
           entityId: newHealthCheckEntityId,
-          type: entityTypeIdPatientHistory,
+          type: entityTypeIdStudentSubmission,
           saved: false,
           edit: true,
           fullTextJson: {
@@ -326,25 +327,25 @@ export default {
             "randomBloodSugar": ""
           }
         },
-        [appointment.entityId]: {
-          ...this.entitiesMap[appointment.entityId],
+        [assignment.entityId]: {
+          ...this.entitiesMap[assignment.entityId],
           fullTextJson: {
-            ...this.entitiesMap[appointment.entityId].fullTextJson,
+            ...this.entitiesMap[assignment.entityId].fullTextJson,
             histories: [
-              ...this.entitiesMap[appointment.entityId].fullTextJson.histories,
+              ...this.entitiesMap[assignment.entityId].fullTextJson.histories,
               newHealthCheckEntityId
             ]
           }
         }
       };
     },
-    addNewPrescription(appointment) {
-      const newPrescriptionEntityId = `${appointment.entityId}_${window.performance.now()}`;
+    addNewPrescription(assignment) {
+      const newPrescriptionEntityId = `${assignment.entityId}_${window.performance.now()}`;
       this.entitiesMap = {
         ...this.entitiesMap,
         [newPrescriptionEntityId]: {
           entityId: newPrescriptionEntityId,
-          type: entityTypeIdPrescription,
+          type: entityTypeIdGrading,
           saved: false,
           edit: true,
           fullTextJson: {
@@ -357,12 +358,12 @@ export default {
             ]
           }
         },
-        [appointment.entityId]: {
-          ...this.entitiesMap[appointment.entityId],
+        [assignment.entityId]: {
+          ...this.entitiesMap[assignment.entityId],
           fullTextJson: {
-            ...this.entitiesMap[appointment.entityId].fullTextJson,
+            ...this.entitiesMap[assignment.entityId].fullTextJson,
             prescriptions: [
-              ...this.entitiesMap[appointment.entityId].fullTextJson.prescriptions,
+              ...this.entitiesMap[assignment.entityId].fullTextJson.prescriptions,
               newPrescriptionEntityId
             ]
           }
@@ -378,7 +379,7 @@ export default {
         }
       };
     },
-    async saveHistory(appointment, history) {
+    async saveHistory(assignment, history) {
       if (history.saved) {
         await this.updateEntity(history);
       } else {
@@ -387,15 +388,15 @@ export default {
           entityId: history.entityId,
           clientId: this.clientId,
           permissionTypeId: permissionTypeViewer,
-          groupIds: [groupIdDoctor]
+          groupIds: [groupIdProfessor]
         });
       }
 
-      await this.updateEntity(appointment);
+      await this.updateEntity(assignment);
 
       this.refreshData();
     },
-    async savePrescription(appointment, prescription) {
+    async savePrescription(assignment, prescription) {
       if (prescription.saved) {
         await this.updateEntity(prescription);
       } else {
@@ -404,11 +405,11 @@ export default {
           entityId: prescription.entityId,
           clientId: this.clientId,
           permissionTypeId: permissionTypeViewer,
-          usernames: [appointment.ownerId]
+          usernames: [assignment.ownerId]
         });
       }
 
-      await this.updateEntity(appointment);
+      await this.updateEntity(assignment);
 
       this.refreshData();
     },
@@ -468,13 +469,12 @@ export default {
       let entity = this.entitiesMap[entityId];
       if (!entity) {
         return null;
-      } else if (entity.type === entityTypeIdAppointment) {
+      } else if (entity.type === entityTypeIdAssignment) {
         entity = {
           ...entity,
           fullTextJson: {
             ...entity.fullTextJson,
-            histories: entity.fullTextJson.histories.map(entityId => this.getEntity({entityId})).filter(entity => !!entity),
-            prescriptions: entity.fullTextJson.prescriptions.map(entityId => this.getEntity({entityId})).filter(entity => !!entity)
+            submissions: entity.fullTextJson.submissions.map(entityId => this.getEntity({entityId})).filter(entity => !!entity),
           }
         }
       } else {
@@ -501,7 +501,7 @@ export default {
     },
     resetData() {
       this.entitiesMap = {};
-      this.appointmentEntityIds = [];
+      this.assignmentEntityIds = [];
 
       if (this.entities) {
         for (let i = 0; i < this.entities.length; i++) {
@@ -525,8 +525,8 @@ export default {
 
           this.entitiesMap[entity.entityId] = entity;
 
-          if (entity.type === entityTypeIdAppointment) {
-            this.appointmentEntityIds.push(entity.entityId);
+          if (entity.type === entityTypeIdAssignment) {
+            this.assignmentEntityIds.push(entity.entityId);
           }
         }
       }

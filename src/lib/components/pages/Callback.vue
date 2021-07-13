@@ -5,7 +5,6 @@
 <script>
 
 import store from "../../store";
-import {custosService} from "../../store/util/custos.util";
 
 export default {
   name: "Callback",
@@ -18,7 +17,7 @@ export default {
       // await this.$store.dispatch("user/addRolesToUser", {
       //   clientId: custosService.clientId,
       //   username: this.$store.getters["auth/currentUsername"],
-      //   realmRoles: [clientRolePatient],
+      //   realmRoles: [clientRoleStudent],
       //   clientLevel: false
       // });
     }

@@ -76,7 +76,7 @@
 
         </div>
 
-        <div style="flex: 1;padding-left: 10px;" v-if="hasPatientRole">
+        <div style="flex: 1;padding-left: 10px;" v-if="hasStudentRole">
           <div>
             <div class="pt-3 text-left">
               <label class="form-label" for="age">Age</label>
@@ -131,20 +131,20 @@
           </div>
         </div>
 
-        <div style="flex: 1;padding-left: 10px;" v-if="hasDoctorRole">
+        <div style="flex: 1;padding-left: 10px;" v-if="hasProfessorRole">
           <div class="pt-3 text-left">
-            <label class="form-label" for="doctorSpecialization">Doctor Specialization</label>
+            <label class="form-label" for="professorSpecialization">Professor Specialization</label>
             <b-form-select
-                :options="availableDoctorSpecializations"
-                v-model="doctorSpecialization"
-                id="doctorSpecialization"
+                :options="availableProfessorSpecializations"
+                v-model="professorSpecialization"
+                id="professorSpecialization"
                 trim
                 size="sm">
             </b-form-select>
           </div>
         </div>
 
-        <div style="flex: 1;padding-left: 10px;" v-if="hasNurseRole">
+        <div style="flex: 1;padding-left: 10px;" v-if="hasResearchAssistantRole">
           <div class="pt-3 text-left">
             <label class="form-label" for="nursingSpecialization">Nursing Specialization</label>
             <b-form-select
@@ -163,18 +163,18 @@
 </template>
 
 <script>
-import TenantHome from "@/components/admin-portal/TenantHome";
-import store from "@/new-service/store";
+import TenantHome from "./TenantHome";
+import store from "../../store";
 import {
   VALIDATION_REGEX_EMAIL,
   VALIDATION_REGEX_FIRST_NAME,
   VALIDATION_REGEX_LAST_NAME
-} from "@/components/validation-regex";
-import config from "@/config";
+} from "../../../components/validation-regex";
+import config from "../../../config";
 
-const clientRoleDoctor = config.value('clientRoleDoctor');
-const clientRoleNurse = config.value('clientRoleNurse');
-const clientRolePatient = config.value('clientRolePatient');
+const clientRoleProfessor = config.value('clientRoleProfessor');
+const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
+const clientRoleStudent = config.value('clientRoleStudent');
 
 export default {
   name: "TenantUser",
@@ -198,11 +198,11 @@ export default {
       address: "",
       mobile: "",
 
-      doctorSpecialization: "",
+      professorSpecialization: "",
       nursingSpecialization: "",
 
       availableGenders: ["Male", "Female", "Prefer not to mention"],
-      availableDoctorSpecializations: ["Surgery", "Physician", "Cardiology", "Radiology"],
+      availableProfessorSpecializations: ["Surgery", "Physician", "Cardiology", "Radiology"],
       availableNursingSpecializations: ["ICU", "Surgical", "Emergency Care"],
 
       rolesToBeDisabled: ["uma_authorization", "offline_access", "admin"],
@@ -211,14 +211,14 @@ export default {
     }
   },
   computed: {
-    hasDoctorRole() {
-      return this.user && this.user.realmRoles.indexOf(clientRoleDoctor) >= 0;
+    hasProfessorRole() {
+      return this.user && this.user.realmRoles.indexOf(clientRoleProfessor) >= 0;
     },
-    hasNurseRole() {
-      return this.user && this.user.realmRoles.indexOf(clientRoleNurse) >= 0;
+    hasResearchAssistantRole() {
+      return this.user && this.user.realmRoles.indexOf(clientRoleResearchAssistant) >= 0;
     },
-    hasPatientRole() {
-      return this.user && this.user.realmRoles.indexOf(clientRolePatient) >= 0;
+    hasStudentRole() {
+      return this.user && this.user.realmRoles.indexOf(clientRoleStudent) >= 0;
     },
     inputState() {
       return {
@@ -334,7 +334,7 @@ export default {
     selectedAttributes() {
       let _attributes = [];
 
-      if (this.hasPatientRole) {
+      if (this.hasStudentRole) {
         _attributes = _attributes.concat([
           {"key": "age", "values": [this.age]},
           {"key": "gender", "values": [this.gender]},
@@ -344,15 +344,15 @@ export default {
         ]);
       }
 
-      if (this.hasNurseRole) {
+      if (this.hasResearchAssistantRole) {
         _attributes = _attributes.concat([
           {"key": "nursingSpecialization", "values": [this.nursingSpecialization]}
         ]);
       }
 
-      if (this.hasDoctorRole) {
+      if (this.hasProfessorRole) {
         _attributes = _attributes.concat([
-          {"key": "doctorSpecialization", "values": [this.doctorSpecialization]}
+          {"key": "professorSpecialization", "values": [this.professorSpecialization]}
         ]);
       }
 
@@ -443,8 +443,8 @@ export default {
             this.mobile = values
           } else if (key === "nursingSpecialization") {
             this.nursingSpecialization = values
-          } else if (key === "doctorSpecialization") {
-            this.doctorSpecialization = values
+          } else if (key === "professorSpecialization") {
+            this.professorSpecialization = values
           }
         }
       }

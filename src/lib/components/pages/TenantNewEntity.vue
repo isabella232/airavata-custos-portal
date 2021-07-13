@@ -6,66 +6,36 @@
     <b-overlay :show="processing">
       <div class="p-2 text-center">
         <div class="w-100 text-left" style="max-width: 600px;display: inline-block;">
-          <!--          <div class="pt-3">-->
-          <!--            <label class="form-label" for="name">Entity Name</label>-->
-          <!--            <b-form-input-->
-          <!--                v-model="name"-->
-          <!--                :state="inputState.name"-->
-          <!--                id="name"-->
-          <!--                trim-->
-          <!--                size="sm">-->
-          <!--            </b-form-input>-->
-          <!--            <b-form-invalid-feedback>-->
-          <!--              Enter at least 2 letters-->
-          <!--            </b-form-invalid-feedback>-->
-          <!--          </div>-->
+
           <div class="pt-3">
-            <label class="form-label" for="fullTextJson.patient">Patient</label>
+            <label class="form-label" for="fullTextJson.title">Title</label>
             <b-form-input
-                v-model="fullTextJson.patient"
-                id="fullTextJson.patient"
+                v-model="fullTextJson.title"
+                id="fullTextJson.title"
                 trim
                 size="sm">
             </b-form-input>
           </div>
 
           <div class="pt-3">
-            <label class="form-label" for="fullTextJson.doctorId">Doctor</label>
-            <button-overlay :show="!availableDoctors" class="w-100">
-              <b-form-select
-                  v-if="!availableDoctors || availableDoctors.length > 0"
-                  v-model="fullTextJson.doctorId"
-                  :options="availableDoctors"
-                  id="fullTextJson.doctorId"
-                  trim
-                  size="sm">
-              </b-form-select>
-              <small v-else>There are no doctors available</small>
-            </button-overlay>
-
-
-          </div>
-
-          <div class="pt-3">
-            <label class="form-label" for="fullTextJson.reason">Reason</label>
-            <b-form-input
-                v-model="fullTextJson.reason"
-                id="fullTextJson.reason"
+            <label class="form-label" for="fullTextJson.description">Description</label>
+            <b-form-textarea
+                v-model="fullTextJson.description"
+                id="fullTextJson.description"
                 trim
                 size="sm">
-            </b-form-input>
+            </b-form-textarea>
           </div>
 
           <div class="pt-3">
-            <label class="form-label" for="fullTextJson.date">Date</label>
+            <label class="form-label" for="fullTextJson.date">Due Date</label>
             <b-form-datepicker
-                v-model="fullTextJson.date"
+                v-model="fullTextJson.dueDate"
                 id="fullTextJson.date"
                 trim
                 size="sm">
             </b-form-datepicker>
           </div>
-
 
         </div>
       </div>
@@ -74,22 +44,22 @@
 </template>
 
 <script>
-import store from "../../new-service/store"
-import TenantHome from "@/components/admin-portal/TenantHome";
+import store from "../../store"
+import TenantHome from "./TenantHome";
 // import ButtonOverlay from "@/components/button-overlay";
-import config from "@/config";
-import ButtonOverlay from "@/components/button-overlay";
+import config from "../../../config";
+// import ButtonOverlay from "../overlay/button-overlay";
 
-// const entityTypeIdAppointment = config.value('entityTypeIdAppointment');
-// const entityTypeIdPatientHistory = config.value('entityTypeIdPatientHistory');
-// const entityTypeIdPrescription = config.value('entityTypeIdPrescription');
+// const entityTypeIdAssignment = config.value('entityTypeIdAssignment');
+// const entityTypeIdStudentSubmission = config.value('entityTypeIdStudentSubmission');
+// const entityTypeIdGrading = config.value('entityTypeIdGrading');
 
-const clientRoleDoctor = config.value('clientRoleDoctor');
-// const clientRoleNurse = config.value('clientRoleNurse');
-// const clientRolePatient = config.value('clientRolePatient');
+// const clientRoleProfessor = config.value('clientRoleProfessor');
+// const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
+// const clientRoleStudent = config.value('clientRoleStudent');
 
-const groupIdDoctor = config.value('groupIdDoctor');
-const groupIdNurse = config.value('groupIdNurse');
+const groupIdProfessor = config.value('groupIdProfessor');
+const groupIdResearchAssistant = config.value('groupIdResearchAssistant');
 
 // const permissionTypeViewer = config.value('permissionTypeViewer');
 const permissionTypeEditor = config.value('permissionTypeEditor');
@@ -98,37 +68,30 @@ const permissionTypeEditor = config.value('permissionTypeEditor');
 export default {
   name: "TenantEntities",
   store: store,
-  components: {ButtonOverlay, TenantHome},
+  components: {TenantHome},
   data() {
     return {
       processing: false,
       errors: [],
 
-      // availableDoctors: ["Dr. Aruna", "Dr. Ruwan", "Dr. Marlon"],
+      // availableProfessors: ["Dr. Aruna", "Dr. Ruwan", "Dr. Marlon"],
 
       // name: null,
       fullTextJson: {
-        "patient": "",
-        "reason": "",
-        "doctorId": "",
-        "visitDate": "",
-        "histories": [],
-        "prescriptions": []
+        "title": "",
+        "description": "",
+        "dueDate": "",
+        "submissions": []
       },
-      entityTypeId: "APPOINTMENT",
-      secretType: "SSH",
-
-      availableSecretTypes: ["SSH"],
-
+      entityTypeId: "ASSIGNMENT",
       inputFieldsList: ["name", "entityTypeId"]
     };
   },
   computed: {
     name() {
-      return `custos-health-appointment-${this.fullTextJson.patient}-${this.fullTextJson.visitDate}`;
+      return `custos-student-portal-assignment-${window.performance.now()}`;
     },
     clientId() {
-      console.log("this.$route.params : ", this.$route.params);
       return this.$route.params.clientId;
     },
     inputState() {
@@ -155,7 +118,7 @@ export default {
     },
     breadcrumbLinks() {
       return [
-        {to: `/tenants/${this.clientId}/entities`, name: "Entities"},
+        {to: `/tenants/${this.clientId}/entities`, name: "Assignments"},
         {to: `/tenants/${this.clientId}/entities/new`, name: "New"}
       ];
     },
@@ -164,18 +127,6 @@ export default {
     },
     users() {
       return this.$store.getters["user/getUsers"]({clientId: this.clientId})
-    },
-    doctors() {
-      return this.users ? this.users.filter(user => user.realmRoles.indexOf(clientRoleDoctor) >= 0) : this.users;
-    },
-    availableDoctors() {
-      if (this.users) {
-        return this.users.filter(user => user.realmRoles.indexOf(clientRoleDoctor) >= 0).map(({username, firstName, lastName}) => {
-          return {text: `Dr. ${firstName}, ${lastName}`, value: username};
-        })
-      } else {
-        return this.users;
-      }
     }
   },
   methods: {
@@ -206,7 +157,7 @@ export default {
             entityId: entityId,
             clientId: this.clientId,
             permissionTypeId: permissionTypeEditor,
-            groupIds: [groupIdDoctor, groupIdNurse]
+            groupIds: [groupIdProfessor, groupIdResearchAssistant]
           });
 
           await this.$router.push(`/tenants/${this.clientId}/entities`);

@@ -11,9 +11,9 @@
       <!--        </router-link>-->
       <!--      </div>-->
       <div>
-        <strong v-if="hasDoctorRole">Doctor view</strong>
-        <strong v-else-if="hasNurseRole">Nurse view</strong>
-        <strong v-else-if="hasPatientRole">Patient view</strong>
+        <strong v-if="hasProfessorRole">Professor view</strong>
+        <strong v-else-if="hasResearchAssistantRole">ResearchAssistant view</strong>
+        <strong v-else-if="hasStudentRole">Student view</strong>
         <strong v-else>The roles are not assigned.</strong>
       </div>
     </div>
@@ -132,14 +132,14 @@
 
 <script>
 
-import store from "../../new-service/store"
-import Breadcrumb from "@/components/Breadcrumb";
-import {custosService} from "@/new-service/store/util/custos.util";
-import config from "@/config";
+import store from "../../store"
+import Breadcrumb from "../block/Breadcrumb";
+import {custosService} from "../../store/util/custos.util";
+import config from "../../../config";
 
-const clientRoleDoctor = config.value('clientRoleDoctor');
-const clientRoleNurse = config.value('clientRoleNurse');
-const clientRolePatient = config.value('clientRolePatient');
+const clientRoleProfessor = config.value('clientRoleProfessor');
+const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
+const clientRoleStudent = config.value('clientRoleStudent');
 
 export default {
   name: "TenantHome",
@@ -196,14 +196,14 @@ export default {
     tenant() {
       return this.$store.getters["tenant/getTenant"]({clientId: this.clientId});
     },
-    hasDoctorRole() {
-      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleDoctor) >= 0;
+    hasProfessorRole() {
+      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleProfessor) >= 0;
     },
-    hasNurseRole() {
-      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleNurse) >= 0;
+    hasResearchAssistantRole() {
+      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleResearchAssistant) >= 0;
     },
-    hasPatientRole() {
-      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRolePatient) >= 0;
+    hasStudentRole() {
+      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleStudent) >= 0;
     }
   },
   beforeMount() {
