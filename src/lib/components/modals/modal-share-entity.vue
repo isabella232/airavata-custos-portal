@@ -1,6 +1,5 @@
 <template>
   <b-modal :id="modalId" :title="title" v-on:show="reset" size="md">
-    currentUsername : {{currentUsername}}
     <input-select-users-or-groups :client-id="clientId" v-on:change="onSelect"/>
     <b-overlay :show="processing">
       <b-skeleton-table v-if="processing" :rows="4" :columns="3"/>

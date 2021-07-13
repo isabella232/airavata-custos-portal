@@ -10,7 +10,7 @@ dotenv.config()
 // VUE_APP_CLIENT_ROLE_RESEARCH_ASSISTANT="nurse"
 // VUE_APP_CLIENT_ROLE_STUDENT="patient"
 //
-// VUE_APP_CLIENT_GROUP_ID_PROFESSOR="group-1_2ea05c80-bb66-40dc-851f-4c5665402234"
+// VUE_APP_CLIENT_GROUP_ID_STUDENT="group-1_2ea05c80-bb66-40dc-851f-4c5665402234"
 // VUE_APP_CLIENT_GROUP_ID_RESEARCH_ASSISTANT="dfsd_3fb3b140-9693-4e70-9898-e1eafde05d3b"
 //
 // VUE_APP_CLIENT_PERMISSION_TYPE_VIEWER="VIEWER"
@@ -25,12 +25,12 @@ export default class Configuration {
             redirectURI: '$VUE_APP_REDIRECT_URI',
 
             entityTypeIdAssignment: '$VUE_APP_CLIENT_ENTITY_TYPE_ID_ASSIGNMENT',
-            entityTypeIdPatientSubmission: '$VUE_APP_CLIENT_ENTITY_TYPE_ID_SUBMISSION',
+            entityTypeIdSubmission: '$VUE_APP_CLIENT_ENTITY_TYPE_ID_SUBMISSION',
             entityTypeIdGrading: '$VUE_APP_CLIENT_ENTITY_TYPE_ID_GRADING',
             clientRoleProfessor: '$VUE_APP_CLIENT_ROLE_PROFESSOR',
             clientRoleResearchAssistant: '$VUE_APP_CLIENT_ROLE_RESEARCH_ASSISTANT',
             clientRoleStudent: '$VUE_APP_CLIENT_ROLE_STUDENT',
-            groupIdProfessor: '$VUE_APP_CLIENT_GROUP_ID_PROFESSOR',
+            groupIdStudent: '$VUE_APP_CLIENT_GROUP_ID_STUDENT',
             groupIdResearchAssistant: '$VUE_APP_CLIENT_GROUP_ID_RESEARCH_ASSISTANT',
             permissionTypeViewer: '$VUE_APP_CLIENT_PERMISSION_TYPE_VIEWER',
             permissionTypeEditor: '$VUE_APP_CLIENT_PERMISSION_TYPE_EDITOR',

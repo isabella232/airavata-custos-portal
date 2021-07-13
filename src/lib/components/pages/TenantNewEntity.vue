@@ -51,14 +51,14 @@ import config from "../../../config";
 // import ButtonOverlay from "../overlay/button-overlay";
 
 // const entityTypeIdAssignment = config.value('entityTypeIdAssignment');
-// const entityTypeIdStudentSubmission = config.value('entityTypeIdStudentSubmission');
+// const entityTypeIdSubmission = config.value('entityTypeIdSubmission');
 // const entityTypeIdGrading = config.value('entityTypeIdGrading');
 
 // const clientRoleProfessor = config.value('clientRoleProfessor');
 // const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
 // const clientRoleStudent = config.value('clientRoleStudent');
 
-const groupIdProfessor = config.value('groupIdProfessor');
+const groupIdStudent = config.value('groupIdStudent');
 const groupIdResearchAssistant = config.value('groupIdResearchAssistant');
 
 // const permissionTypeViewer = config.value('permissionTypeViewer');
@@ -157,7 +157,7 @@ export default {
             entityId: entityId,
             clientId: this.clientId,
             permissionTypeId: permissionTypeEditor,
-            groupIds: [groupIdProfessor, groupIdResearchAssistant]
+            groupIds: [groupIdStudent, groupIdResearchAssistant]
           });
 
           await this.$router.push(`/tenants/${this.clientId}/entities`);

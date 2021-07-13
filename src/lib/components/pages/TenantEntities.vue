@@ -7,222 +7,168 @@
     </template>
     <table-overlay-info :rows="5" :columns="1" :data="assignments"
                         v-if="hasStudentRole || hasResearchAssistantRole || hasProfessorRole">
-      <b-table-simple>
-        <b-thead>
-          <b-tr>
-            <b-th>Appointment</b-th>
-            <b-th>History Check</b-th>
-            <b-th>Prescriptions</b-th>
-          </b-tr>
-        </b-thead>
-        <b-tbody>
-          <b-tr v-for="(assignment, assignmentIndex) in assignments" :key="assignmentIndex">
-            <!--          {{assignment}}-->
-            <b-td>
+      <div v-for="(assignment, assignmentIndex) in assignments" :key="assignmentIndex">
+        <div style="background-color: #f9f9f9;padding: 15px;margin-bottom: 10px;border-radius: 10px;">
+          <div style="display: flex; flex-direction: row;">
+            <strong style="flex: 1;font-size: 25px;color: #6e7479;">{{ assignment.fullTextJson.title }}</strong>
+            <div style="display: flex; flex-direction: row;">
+              <small class="text-left" style="line-height: 31px;color: #495057;">
+                {{ assignment.createdAt }} by
+                <router-link :to="`/tenants/${clientId}/users/${assignment.ownerId}`" v-slot="{href, navigate}">
+                  <b-link :href="href" v-on:click="navigate">{{ assignment.ownerId }}</b-link>
+                </router-link>
+              </small>
               <div>
-                <strong>Student :</strong>
-                {{ assignment.fullTextJson.student }}
-              </div>
-              <div>
-                <strong>Date :</strong>
-                {{ assignment.fullTextJson.visitDate }}
-              </div>
-              <div>
-                <strong>Reason :</strong>
-                {{ assignment.fullTextJson.reason }}
-              </div>
-              <div>
-                <strong>Professor :</strong>
-                {{ assignment.fullTextJson.professorId }}
-              </div>
-              <div style="display: flex; flex-direction: row;">
-                <small class="text-left" style="padding-top: 14px;color: #495057;">
-                  {{ assignment.createdAt }} by
-                  <router-link :to="`/tenants/${clientId}/users/${assignment.ownerId}`" v-slot="{href, navigate}">
-                    <b-link :href="href" v-on:click="navigate">{{ assignment.ownerId }}</b-link>
-                  </router-link>
-                </small>
-                <div>
-                  <b-button v-if="hasPermission(assignment, permissionTypeEditor)" variant="link" size="sm"
-                            v-b-tooltip.hover title="Share"
-                            v-b-modal="`modal-assignment-share-${assignment.entityId}`">
-                    <b-icon icon="share"/>
+                <b-button v-if="hasPermission(assignment, permissionTypeEditor)" variant="link" size="sm"
+                          v-b-tooltip.hover title="Share"
+                          v-b-modal="`modal-assignment-share-${assignment.entityId}`">
+                  <b-icon icon="share"/>
+                </b-button>
+                <modal-share-entity :entity-id="assignment.entityId" :client-id="clientId"
+                                    :modal-id="`modal-assignment-share-${assignment.entityId}`"
+                                    title="Share the assignment"/>
+
+                <button-overlay :show="processingDelete[assignment.entityId]">
+                  <b-button variant="link" size="sm" v-on:click="onClickDelete(assignment)"
+                            v-b-tooltip.hover title="Delete">
+                    <b-icon icon="trash"/>
                   </b-button>
-                  <modal-share-entity :entity-id="assignment.entityId" :client-id="clientId"
-                                      :modal-id="`modal-assignment-share-${assignment.entityId}`"
-                                      title="Share the assignment"/>
-                </div>
+                </button-overlay>
               </div>
-            </b-td>
-            <b-td>
-              <ul class="history-ul">
-                <li v-for="(history, historyIndex) in assignment.fullTextJson.histories" :key="historyIndex">
-                  <div v-if="!history.edit">
-                    <div>
-                      <strong>Symptoms :</strong>
-                      {{ history.fullTextJson.symptoms }}
-                    </div>
-                    <div>
-                      <strong>Allergies :</strong>
-                      {{ history.fullTextJson.allergies }}
-                    </div>
-                    <div>
-                      <strong>Blood Pressure :</strong>
-                      {{ history.fullTextJson.bloodPressure }}
-                    </div>
-                    <div>
-                      <strong>Random Blood Sugar :</strong>
-                      {{ history.fullTextJson.randomBloodSugar }}
-                    </div>
-                    <div style="display: flex; flex-direction: row;">
-                      <small class="text-left" style="flex: 1;padding-top: 14px;color: #495057;">
-                        {{ history.createdAt }} by
-                        <router-link :to="`/tenants/${clientId}/users/${history.ownerId}`" v-slot="{href, navigate}">
-                          <b-link :href="href" v-on:click="navigate">{{ history.ownerId }}</b-link>
-                        </router-link>
-                      </small>
-                      <div>
-                        <b-button variant="link" size="sm" v-if="hasPermission(history, permissionTypeEditor)"
-                                  v-on:click="onClickEditEntity(history)" v-b-tooltip.hover title="Edit">
-                          <b-icon icon="pencil"/>
-                        </b-button>
-                        <b-button variant="link" size="sm" v-if="hasPermission(history, permissionTypeEditor)"
-                                  v-b-modal="`modal-history-share-${history.entityId}`" v-b-tooltip.hover title="Share">
-                          <b-icon icon="share"/>
-                        </b-button>
-                        <modal-share-entity :entity-id="history.entityId" :client-id="clientId"
-                                            :modal-id="`modal-history-share-${history.entityId}`"
-                                            title="Share Student's History"/>
-                      </div>
-                    </div>
+            </div>
+          </div>
+          <div>
+            {{ assignment.fullTextJson.description }}
+          </div>
+          <div>
+            <strong>Due Date</strong> : {{ assignment.fullTextJson.dueDate }}
+          </div>
+          <div>
+            <ul class="submission-ul">
+              <li v-for="(submission, submissionIndex) in assignment.fullTextJson.submissions" :key="submissionIndex">
+                <div v-if="!submission.edit">
+                  <div>
+                    {{ submission.fullTextJson.text }}
                   </div>
-                  <div v-else>
+                  <div style="display: flex; flex-direction: row;">
+                    <small class="text-left" style="flex: 1;padding-top: 14px;color: #495057;">
+                      {{ submission.createdAt }} by
+                      <router-link :to="`/tenants/${clientId}/users/${submission.ownerId}`" v-slot="{href, navigate}">
+                        <b-link :href="href" v-on:click="navigate">{{ submission.ownerId }}</b-link>
+                      </router-link>
+                    </small>
                     <div>
-                      <label class="form-label">Symptoms</label>
-                      <b-form-input size="sm" v-model="history.fullTextJson.symptoms"/>
-                    </div>
-                    <div>
-                      <label class="form-label">Allergies</label>
-                      <b-form-input size="sm" v-model="history.fullTextJson.allergies"/>
-                    </div>
-                    <div>
-                      <label class="form-label">Blood Pressure</label>
-                      <b-form-input size="sm" v-model="history.fullTextJson.bloodPressure"/>
-                    </div>
-                    <div>
-                      <label class="form-label">Random Blood Sugar</label>
-                      <b-form-input size="sm" v-model="history.fullTextJson.randomBloodSugar"/>
-                    </div>
-                    <div class="mt-3">
-                      <b-button variant="primary" size="sm"
-                                v-on:click="saveHistory(assignment, history);">
-                        Save
+                      <b-button variant="link" size="sm" v-if="hasPermission(submission, permissionTypeEditor)"
+                                v-on:click="onClickEditEntity(submission)" v-b-tooltip.hover title="Edit">
+                        <b-icon icon="pencil"/>
                       </b-button>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-              <b-button v-if="hasResearchAssistantRole && hasPermission(assignment, permissionTypeEditor)"
-                        variant="link" size="sm"
-                        v-on:click="addNewHealthCheck(assignment)">
-                + Create new health check
-              </b-button>
-            </b-td>
-            <b-td>
-              <ul class="prescriptions-ul">
-                <li v-for="(prescription, prescriptionIndex) in assignment.fullTextJson.prescriptions"
-                    :key="prescriptionIndex">
-                  <div v-if="!prescription.edit">
-                    <div>
-                      <strong>MEDICATIONS</strong>
-                      <ul class="prescription-medications-ul">
-                        <li v-for="(medication, medicationIndex) in prescription.fullTextJson.medications"
-                            :key="medicationIndex">
-                          <strong>{{ medication.name }} :</strong>
-                          {{ medication.dose }}
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div>
-                      <strong>RECOMMENDATIONS</strong>
-                      <ul class="prescription-recommendations-ul">
-                        <li v-for="(recommendation, recommendationIndex) in prescription.fullTextJson.recommendations"
-                            :key="recommendationIndex">
-                          {{ recommendation }}
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div style="display: flex; flex-direction: row;">
-                      <small class="text-left" style="flex: 1;padding-top: 14px;color: #495057;">
-                        {{ prescription.createdAt }} by
-                        <router-link :to="`/tenants/${clientId}/users/${prescription.ownerId}`"
-                                     v-slot="{href, navigate}">
-                          <b-link :href="href" v-on:click="navigate">{{ prescription.ownerId }}</b-link>
-                        </router-link>
-                      </small>
-                      <div>
-                        <b-button variant="link" size="sm" v-if="hasPermission(prescription, permissionTypeEditor)"
-                                  v-on:click="onClickEditEntity(prescription)">
-                          <b-icon icon="pencil" v-b-tooltip.hover title="Edit"/>
-                        </b-button>
-                        <b-button variant="link" size="sm" v-if="hasPermission(prescription, permissionTypeEditor)"
-                                  v-b-modal="`modal-prescription-share-${prescription.entityId}`" v-b-tooltip.hover
-                                  title="Share">
-                          <b-icon icon="share"/>
-                        </b-button>
-                        <modal-share-entity :entity-id="prescription.entityId" :client-id="clientId"
-                                            :modal-id="`modal-prescription-share-${prescription.entityId}`"
-                                            title="Share Prescription"/>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-else>
-                    <div>
-                      <label class="form-label">MEDICATIONS</label>
-                      <b-button variant="link" size="sm"
-                                v-on:click="prescription.fullTextJson.medications.push({name: '', dose: ''})">
-                        + Add
+                      <b-button variant="link" size="sm" v-if="hasPermission(submission, permissionTypeEditor)"
+                                v-b-modal="`modal-submission-share-${submission.entityId}`" v-b-tooltip.hover
+                                title="Share">
+                        <b-icon icon="share"/>
                       </b-button>
-                      <div v-for="(medication, medicationIndex) in prescription.fullTextJson.medications"
-                           :key="medicationIndex">
+                      <modal-share-entity :entity-id="submission.entityId" :client-id="clientId"
+                                          :modal-id="`modal-submission-share-${submission.entityId}`"
+                                          title="Share Student's Submission"/>
+
+                      <button-overlay :show="processingDelete[submission.entityId]">
+                        <b-button variant="link" size="sm" v-on:click="onClickDelete(submission)"
+                                  v-b-tooltip.hover title="Delete">
+                          <b-icon icon="trash"/>
+                        </b-button>
+                      </button-overlay>
+                    </div>
+                  </div>
+
+
+                  <ul class="gradings-ul">
+                    <li v-for="(grading, gradingIndex) in submission.fullTextJson.gradings"
+                        :key="gradingIndex">
+                      <div v-if="!grading.edit">
+                        <div>
+                          <strong>Grade : </strong>{{ grading.fullTextJson.grade }}
+                        </div>
+                        <div>
+                          <strong>Comment : </strong>{{ grading.fullTextJson.comment }}
+                        </div>
                         <div style="display: flex; flex-direction: row;">
-                          <b-form-select size="sm" :options="availableMedications" v-model="medication.name"/>
-                          <b-form-input size="sm" v-model="medication.dose"/>
+                          <small class="text-left" style="flex: 1;padding-top: 14px;color: #495057;">
+                            {{ grading.createdAt }} by
+                            <router-link :to="`/tenants/${clientId}/users/${grading.ownerId}`"
+                                         v-slot="{href, navigate}">
+                              <b-link :href="href" v-on:click="navigate">{{ grading.ownerId }}</b-link>
+                            </router-link>
+                          </small>
+                          <div>
+                            <b-button variant="link" size="sm" v-if="hasPermission(grading, permissionTypeEditor)"
+                                      v-on:click="onClickEditEntity(grading)" v-b-tooltip.hover title="Edit">
+                              <b-icon icon="pencil"/>
+                            </b-button>
+                            <b-button variant="link" size="sm" v-if="hasPermission(grading, permissionTypeEditor)"
+                                      v-b-modal="`modal-share-${grading.entityId}`" v-b-tooltip.hover
+                                      title="Share">
+                              <b-icon icon="share"/>
+                            </b-button>
+                            <modal-share-entity :entity-id="grading.entityId" :client-id="clientId"
+                                                :modal-id="`modal-share-${grading.entityId}`"
+                                                title="Share Student's Submission"/>
+
+                            <button-overlay :show="processingDelete[grading.entityId]">
+                              <b-button variant="link" size="sm" v-on:click="onClickDelete(grading)"
+                                        v-b-tooltip.hover title="Delete">
+                                <b-icon icon="trash"/>
+                              </b-button>
+                            </button-overlay>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div>
-                      <label class="form-label">RECOMMENDATIONS</label>
-                      <b-button variant="link" size="sm"
-                                v-on:click="prescription.fullTextJson.recommendations.push('')">
-                        + Add
-                      </b-button>
-                      <div v-for="(recommendation, recommendationIndex) in prescription.fullTextJson.recommendations"
-                           :key="recommendationIndex">
-                        <b-form-input size="sm"
-                                      v-model="prescription.fullTextJson.recommendations[recommendationIndex]"/>
+                      <div v-else>
+                        <div>
+                          <b-form-input size="sm" v-model="grading.fullTextJson.grade"/>
+                          <b-form-input size="sm" v-model="grading.fullTextJson.comment"/>
+                        </div>
+                        <div class="mt-3">
+                          <b-button variant="primary" size="sm"
+                                    v-on:click="saveGrading(assignment, submission, grading);">
+                            Save
+                          </b-button>
+                        </div>
                       </div>
-                    </div>
-                    <div class="mt-3">
-                      <b-button variant="primary" size="sm"
-                                v-on:click="savePrescription(assignment, prescription);">Save
-                      </b-button>
-                    </div>
-                  </div>
-                </li>
-              </ul>
+                    </li>
+                  </ul>
 
-              <b-button v-if="hasProfessorRole && hasPermission(assignment, permissionTypeEditor)" variant="link"
-                        size="sm"
-                        v-on:click="addNewPrescription(assignment)">
-                + Add new prescription
-              </b-button>
-            </b-td>
-          </b-tr>
-        </b-tbody>
-      </b-table-simple>
+                  <b-button
+                      v-if="(hasProfessorRole || hasResearchAssistantRole) && hasPermission(submission, permissionTypeEditor)"
+                      variant="link" size="sm"
+                      v-on:click="addNewGrading(assignment, submission)">
+                    + Create new submission grading
+                  </b-button>
+
+
+                </div>
+                <div v-else>
+                  <div>
+                    <b-form-textarea size="sm" v-model="submission.fullTextJson.text"/>
+                  </div>
+                  <div class="mt-3">
+                    <b-button variant="primary" size="sm"
+                              v-on:click="saveSubmission(assignment, submission);">
+                      Save
+                    </b-button>
+                  </div>
+                </div>
+              </li>
+            </ul>
+            <b-button
+                v-if="hasStudentRole && hasPermission(assignment, permissionTypeEditor) && !hasAlreadySubmitted(assignment)"
+                variant="link" size="sm"
+                v-on:click="addNewSubmission(assignment)">
+              + Create new submission
+            </b-button>
+
+          </div>
+        </div>
+      </div>
     </table-overlay-info>
     <div v-else>Unauthorized. Please contact the system administrator.</div>
   </TenantHome>
@@ -234,19 +180,20 @@ import TenantHome from "./TenantHome";
 import TableOverlayInfo from "../overlay/table-overlay-info";
 import config from "../../../config";
 import ModalShareEntity from "../modals/modal-share-entity";
+import ButtonOverlay from "@/lib/components/overlay/button-overlay";
 // import ModalShareEntity from "@/components/admin-portal/modals/modal-share-entity";
 // import ButtonOverlay from "@/components/button-overlay";
 
 
 const entityTypeIdAssignment = config.value('entityTypeIdAssignment');
-const entityTypeIdStudentSubmission = config.value('entityTypeIdStudentSubmission');
+const entityTypeIdSubmission = config.value('entityTypeIdSubmission');
 const entityTypeIdGrading = config.value('entityTypeIdGrading');
 
 const clientRoleProfessor = config.value('clientRoleProfessor');
 const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
 const clientRoleStudent = config.value('clientRoleStudent');
 
-const groupIdProfessor = config.value('groupIdProfessor');
+const groupIdStudent = config.value('groupIdStudent');
 // const groupIdResearchAssistant = config.value('groupIdResearchAssistant');
 
 const permissionTypeViewer = config.value('permissionTypeViewer');
@@ -257,7 +204,7 @@ const permissionTypeEditor = config.value('permissionTypeEditor');
 export default {
   name: "TenantEntities",
   store: store,
-  components: {ModalShareEntity, TableOverlayInfo, TenantHome},
+  components: {ButtonOverlay, ModalShareEntity, TableOverlayInfo, TenantHome},
   data() {
     return {
       processingDelete: {},
@@ -311,60 +258,72 @@ export default {
     }
   },
   methods: {
-    addNewHealthCheck(assignment) {
-      const newHealthCheckEntityId = `${assignment.entityId}_${window.performance.now()}`;
+    hasAlreadySubmitted() {
+      // if (assignment && assignment.fullTextJson.submissions) {
+      //   for (let i = 0; i < assignment.fullTextJson.submissions.length; i++) {
+      //     if (assignment.fullTextJson.submissions[i].ownerId === this.currentUsername) {
+      //       return true;
+      //     }
+      //   }
+      //
+      //   return false;
+      // }
+
+      return false;
+    },
+    addNewSubmission(assignment) {
+      const newSubmissionEntityId = `${assignment.entityId}_${window.performance.now()}`;
       this.entitiesMap = {
         ...this.entitiesMap,
-        [newHealthCheckEntityId]: {
-          entityId: newHealthCheckEntityId,
-          type: entityTypeIdStudentSubmission,
+        [newSubmissionEntityId]: {
+          entityId: newSubmissionEntityId,
+          type: entityTypeIdSubmission,
           saved: false,
           edit: true,
           fullTextJson: {
+            "assignmentId": assignment.entityId,
             "symptoms": "",
             "allergies": "",
             "bloodPressure": "",
-            "randomBloodSugar": ""
+            "randomBloodSugar": "",
+            "gradings": []
           }
         },
         [assignment.entityId]: {
           ...this.entitiesMap[assignment.entityId],
           fullTextJson: {
             ...this.entitiesMap[assignment.entityId].fullTextJson,
-            histories: [
-              ...this.entitiesMap[assignment.entityId].fullTextJson.histories,
-              newHealthCheckEntityId
+            submissions: [
+              ...this.entitiesMap[assignment.entityId].fullTextJson.submissions,
+              newSubmissionEntityId
             ]
           }
         }
       };
     },
-    addNewPrescription(assignment) {
-      const newPrescriptionEntityId = `${assignment.entityId}_${window.performance.now()}`;
+    addNewGrading(assignment, submission) {
+      const newGradingEntityId = `${submission.entityId}_${window.performance.now()}`;
       this.entitiesMap = {
         ...this.entitiesMap,
-        [newPrescriptionEntityId]: {
-          entityId: newPrescriptionEntityId,
+        [newGradingEntityId]: {
+          entityId: newGradingEntityId,
           type: entityTypeIdGrading,
           saved: false,
           edit: true,
           fullTextJson: {
-            "medications": [
-              // {"name": "Panadol", "dose": 23},
-              // {"name": "Vitamin C", "dose": 40}
-            ],
-            "recommendations": [
-              // "Bed Rest", "Steam"
-            ]
+            "assignmentId": assignment.entityId,
+            "submissionId": submission.entityId,
+            "grade": "",
+            "comment": ""
           }
         },
-        [assignment.entityId]: {
-          ...this.entitiesMap[assignment.entityId],
+        [submission.entityId]: {
+          ...this.entitiesMap[submission.entityId],
           fullTextJson: {
-            ...this.entitiesMap[assignment.entityId].fullTextJson,
-            prescriptions: [
-              ...this.entitiesMap[assignment.entityId].fullTextJson.prescriptions,
-              newPrescriptionEntityId
+            ...this.entitiesMap[submission.entityId].fullTextJson,
+            gradings: [
+              ...this.entitiesMap[submission.entityId].fullTextJson.gradings,
+              newGradingEntityId
             ]
           }
         }
@@ -379,16 +338,16 @@ export default {
         }
       };
     },
-    async saveHistory(assignment, history) {
-      if (history.saved) {
-        await this.updateEntity(history);
+    async saveSubmission(assignment, submission) {
+      if (submission.saved) {
+        await this.updateEntity(submission);
       } else {
-        await this.saveEntity(history);
+        await this.saveEntity(submission);
         await this.$store.dispatch("sharing/shareEntity", {
-          entityId: history.entityId,
+          entityId: submission.entityId,
           clientId: this.clientId,
           permissionTypeId: permissionTypeViewer,
-          groupIds: [groupIdProfessor]
+          groupIds: [groupIdStudent]
         });
       }
 
@@ -396,20 +355,35 @@ export default {
 
       this.refreshData();
     },
-    async savePrescription(assignment, prescription) {
-      if (prescription.saved) {
-        await this.updateEntity(prescription);
+    async saveGrading(assignment, submission, grading) {
+      if (grading.saved) {
+        await this.updateEntity(grading);
       } else {
-        await this.saveEntity(prescription);
+        await this.saveEntity(grading);
         await this.$store.dispatch("sharing/shareEntity", {
-          entityId: prescription.entityId,
+          entityId: grading.entityId,
           clientId: this.clientId,
           permissionTypeId: permissionTypeViewer,
-          usernames: [assignment.ownerId]
+          usernames: [assignment.ownerId],
         });
       }
 
-      await this.updateEntity(assignment);
+      await this.updateEntity(submission);
+
+      this.refreshData();
+    },
+    async publishGrading(assignment, submission, grading) {
+      if (grading.saved) {
+        await this.updateEntity(grading);
+      } else {
+        await this.saveEntity(grading);
+        await this.$store.dispatch("sharing/shareEntity", {
+          entityId: grading.entityId,
+          clientId: this.clientId,
+          permissionTypeId: permissionTypeViewer,
+          usernames: [submission.ownerId],
+        });
+      }
 
       this.refreshData();
     },
@@ -419,7 +393,7 @@ export default {
         await this.$store.dispatch("entity/updateEntity", {
           entityId: entity.entityId,
           clientId: this.clientId,
-          name: `custos-health-history-${window.performance.now()}`,
+          name: `custos-health-submission-${window.performance.now()}`,
           fullText: JSON.stringify(entity.fullTextJson),
           type: entity.type,
           ownerId: entity.ownerId
@@ -445,7 +419,7 @@ export default {
         await this.$store.dispatch("entity/createEntity", {
           entityId: entity.entityId,
           clientId: this.clientId,
-          name: `custos-health-history-${window.performance.now()}`,
+          name: `custos-health-submission-${window.performance.now()}`,
           fullText: JSON.stringify(entity.fullTextJson),
           type: entity.type,
           ownerId: this.$store.getters["auth/currentUsername"]
@@ -475,6 +449,14 @@ export default {
           fullTextJson: {
             ...entity.fullTextJson,
             submissions: entity.fullTextJson.submissions.map(entityId => this.getEntity({entityId})).filter(entity => !!entity),
+          }
+        }
+      } else if (entity.type === entityTypeIdSubmission) {
+        entity = {
+          ...entity,
+          fullTextJson: {
+            ...entity.fullTextJson,
+            gradings: entity.fullTextJson.gradings.map(entityId => this.getEntity({entityId})).filter(entity => !!entity),
           }
         }
       } else {
@@ -567,12 +549,12 @@ export default {
 </script>
 
 <style scoped>
-ul.history-ul {
+ul.submission-ul {
   list-style: none;
   padding: 0px;
 }
 
-ul.history-ul > li {
+ul.submission-ul > li {
   list-style: none;
   padding: 10px;
   background-color: #cdf0c2;
@@ -585,7 +567,7 @@ ul.prescriptions-ul {
   padding: 0px;
 }
 
-ul.prescriptions-ul > li {
+ul.gradings-ul > li {
   list-style: none;
   padding: 10px;
   background-color: #bee5eb;
