@@ -55,11 +55,11 @@ import config from "../../../config";
 // const entityTypeIdGrading = config.value('entityTypeIdGrading');
 
 // const clientRoleProfessor = config.value('clientRoleProfessor');
-// const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
+// const clientRoleTeachingAssistant = config.value('clientRoleTeachingAssistant');
 // const clientRoleStudent = config.value('clientRoleStudent');
 
 const groupIdStudent = config.value('groupIdStudent');
-const groupIdResearchAssistant = config.value('groupIdResearchAssistant');
+const groupIdTeachingAssistant = config.value('groupIdTeachingAssistant');
 
 // const permissionTypeViewer = config.value('permissionTypeViewer');
 const permissionTypeEditor = config.value('permissionTypeEditor');
@@ -157,7 +157,7 @@ export default {
             entityId: entityId,
             clientId: this.clientId,
             permissionTypeId: permissionTypeEditor,
-            groupIds: [groupIdStudent, groupIdResearchAssistant]
+            groupIds: [groupIdStudent, groupIdTeachingAssistant]
           });
 
           await this.$router.push(`/tenants/${this.clientId}/entities`);

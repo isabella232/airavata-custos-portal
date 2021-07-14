@@ -76,7 +76,7 @@
 
         </div>
 
-        <div style="flex: 1;padding-left: 10px;" v-if="hasStudentRole">
+        <div style="flex: 1;padding-left: 10px;">
           <div>
             <div class="pt-3 text-left">
               <label class="form-label" for="age">Age</label>
@@ -131,31 +131,6 @@
           </div>
         </div>
 
-        <div style="flex: 1;padding-left: 10px;" v-if="hasProfessorRole">
-          <div class="pt-3 text-left">
-            <label class="form-label" for="professorSpecialization">Professor Specialization</label>
-            <b-form-select
-                :options="availableProfessorSpecializations"
-                v-model="professorSpecialization"
-                id="professorSpecialization"
-                trim
-                size="sm">
-            </b-form-select>
-          </div>
-        </div>
-
-        <div style="flex: 1;padding-left: 10px;" v-if="hasResearchAssistantRole">
-          <div class="pt-3 text-left">
-            <label class="form-label" for="nursingSpecialization">Nursing Specialization</label>
-            <b-form-select
-                :options="availableNursingSpecializations"
-                v-model="nursingSpecialization"
-                id="nursingSpecialization"
-                trim
-                size="sm">
-            </b-form-select>
-          </div>
-        </div>
 
       </div>
     </b-overlay>
@@ -173,7 +148,7 @@ import {
 import config from "../../../config";
 
 const clientRoleProfessor = config.value('clientRoleProfessor');
-const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
+const clientRoleTeachingAssistant = config.value('clientRoleTeachingAssistant');
 const clientRoleStudent = config.value('clientRoleStudent');
 
 export default {
@@ -197,13 +172,8 @@ export default {
       gender: "",
       address: "",
       mobile: "",
-
-      professorSpecialization: "",
-      nursingSpecialization: "",
-
+      
       availableGenders: ["Male", "Female", "Prefer not to mention"],
-      availableProfessorSpecializations: ["Surgery", "Physician", "Cardiology", "Radiology"],
-      availableNursingSpecializations: ["ICU", "Surgical", "Emergency Care"],
 
       rolesToBeDisabled: ["uma_authorization", "offline_access", "admin"],
 
@@ -214,8 +184,8 @@ export default {
     hasProfessorRole() {
       return this.user && this.user.realmRoles.indexOf(clientRoleProfessor) >= 0;
     },
-    hasResearchAssistantRole() {
-      return this.user && this.user.realmRoles.indexOf(clientRoleResearchAssistant) >= 0;
+    hasTeachingAssistantRole() {
+      return this.user && this.user.realmRoles.indexOf(clientRoleTeachingAssistant) >= 0;
     },
     hasStudentRole() {
       return this.user && this.user.realmRoles.indexOf(clientRoleStudent) >= 0;
@@ -334,27 +304,13 @@ export default {
     selectedAttributes() {
       let _attributes = [];
 
-      if (this.hasStudentRole) {
-        _attributes = _attributes.concat([
-          {"key": "age", "values": [this.age]},
-          {"key": "gender", "values": [this.gender]},
-          {"key": "dateOfBirth", "values": [this.dateOfBirth]},
-          {"key": "address", "values": [this.address]},
-          {"key": "mobile", "values": [this.mobile]}
-        ]);
-      }
-
-      if (this.hasResearchAssistantRole) {
-        _attributes = _attributes.concat([
-          {"key": "nursingSpecialization", "values": [this.nursingSpecialization]}
-        ]);
-      }
-
-      if (this.hasProfessorRole) {
-        _attributes = _attributes.concat([
-          {"key": "professorSpecialization", "values": [this.professorSpecialization]}
-        ]);
-      }
+      _attributes = _attributes.concat([
+        {"key": "age", "values": [this.age]},
+        {"key": "gender", "values": [this.gender]},
+        {"key": "dateOfBirth", "values": [this.dateOfBirth]},
+        {"key": "address", "values": [this.address]},
+        {"key": "mobile", "values": [this.mobile]}
+      ]);
 
       return _attributes;
     }
