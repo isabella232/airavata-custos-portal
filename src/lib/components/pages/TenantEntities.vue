@@ -51,6 +51,14 @@
                 <b-button variant="link" v-b-modal="`submission-modal-${assignment.entityId}`">
                   View Submission
                 </b-button>
+                <div v-if="mySubmission(assignment).hasGraded" style="display: flex; flex-direction: row;">
+                  <div class="pr-4">
+                    <strong>Grade : </strong> {{ mySubmission(assignment).grade }}
+                  </div>
+                  <div>
+                    <strong>Comment : </strong> {{ mySubmission(assignment).grade }}
+                  </div>
+                </div>
               </div>
               <div v-else>
                 <b-button variant="link"
@@ -91,7 +99,8 @@
                       :key="studentSubmissionIndex">
                   <b-td>{{ studentSubmission.studentId }}</b-td>
                   <b-td>
-                    <template v-if="studentSubmission.hasGraded">Graded</template>
+                    <template v-if="studentSubmission.hasGradePublished">Grade Released</template>
+                    <template v-else-if="studentSubmission.hasGraded">Graded</template>
                     <template v-else-if="studentSubmission.hasSubmitted">Submitted</template>
                     <template v-else>Not Submitted</template>
                   </b-td>
@@ -99,7 +108,13 @@
                   <b-td>{{ studentSubmission.comment }}</b-td>
                   <b-td>
                     <div v-if="studentSubmission.submission">
-                      <b-button variant="link" v-b-modal="`submission-modal-${studentSubmission.submission.entityId}`">
+                      <b-button variant="secondary" size="sm" class="mr-3"
+                                v-if="hasProfessorRole && studentSubmission.hasGraded && !studentSubmission.hasGradePublished"
+                                v-on:click="publishGrading(assignment, studentSubmission.submission, studentSubmission.grading)">
+                        Release Grade
+                      </b-button>
+                      <b-button variant="secondary" size="sm"
+                                v-b-modal="`submission-modal-${studentSubmission.submission.entityId}`">
                         View Submission
                       </b-button>
                       <b-modal :id="`submission-modal-${studentSubmission.submission.entityId}`">
@@ -139,6 +154,31 @@
                           </b-button>
                         </template>
                       </b-modal>
+
+                      <template v-if="studentSubmission.hasSubmitted">
+                        <b-button variant="link" size="sm"
+                                  v-b-tooltip.hover title="Share"
+                                  v-b-modal="`modal-share-${studentSubmission.submission.entityId}`">
+                          <b-icon icon="share"/>
+                          Share Submission
+                        </b-button>
+                        <modal-share-entity :entity-id="studentSubmission.submission.entityId" :client-id="clientId"
+                                            :modal-id="`modal-share-${studentSubmission.submission.entityId}`"
+                                            title="Share the Submission"/>
+                      </template>
+
+                      <template v-if="studentSubmission.hasGraded">
+                        <b-button variant="link" size="sm"
+                                  v-b-tooltip.hover title="Share"
+                                  v-b-modal="`modal-share-${studentSubmission.grading.entityId}`">
+                          <b-icon icon="share"/>
+                          Share Grading
+                        </b-button>
+                        <modal-share-entity :entity-id="studentSubmission.grading.entityId" :client-id="clientId"
+                                            :modal-id="`modal-share-${studentSubmission.grading.entityId}`"
+                                            title="Share the Grading"/>
+                      </template>
+
                     </div>
                   </b-td>
                 </b-tr>
@@ -376,6 +416,7 @@ export default {
         studentId: this.currentUsername,
         hasSubmitted: !!submission && submission.saved,
         hasGraded: !!grading && grading.saved,
+        hasGradePublished: !!grading && grading.saved && grading.fullTextJson.published,
         grade: !!grading && grading.saved ? grading.fullTextJson.grade : "",
         comment: !!grading && grading.saved ? grading.fullTextJson.comment : "",
         submission,
@@ -402,6 +443,7 @@ export default {
           studentId,
           hasSubmitted: !!submission && submission.saved,
           hasGraded: !!grading && grading.saved,
+          hasGradePublished: !!grading && grading.saved && grading.fullTextJson.published,
           grade: !!grading && grading.saved ? grading.fullTextJson.grade : "",
           comment: !!grading && grading.saved ? grading.fullTextJson.comment : "",
           submission,
@@ -463,7 +505,8 @@ export default {
             "assignmentId": assignment.entityId,
             "submissionId": submission.entityId,
             "grade": "",
-            "comment": ""
+            "comment": "",
+            "published": false
           }
         },
         [submission.entityId]: {
@@ -524,17 +567,24 @@ export default {
       this.refreshData();
     },
     async publishGrading(assignment, submission, grading) {
-      if (grading.saved) {
-        await this.updateEntity(grading);
-      } else {
-        await this.saveEntity(grading);
-        await this.$store.dispatch("sharing/shareEntity", {
-          entityId: grading.entityId,
-          clientId: this.clientId,
-          permissionTypeId: permissionTypeViewer,
-          usernames: [submission.ownerId],
-        });
-      }
+      this.entitiesMap = {
+        ...this.entitiesMap,
+        [grading.entityId]: {
+          ...this.entitiesMap[grading.entityId],
+          fullTextJson: {
+            ...this.entitiesMap[grading.entityId].fullTextJson,
+            published: true
+          }
+        }
+      };
+
+      await this.updateEntity(grading);
+      await this.$store.dispatch("sharing/shareEntity", {
+        entityId: grading.entityId,
+        clientId: this.clientId,
+        permissionTypeId: permissionTypeViewer,
+        usernames: [submission.ownerId],
+      });
 
       this.refreshData();
     },
