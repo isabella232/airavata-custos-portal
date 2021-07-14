@@ -12,7 +12,7 @@
       <!--      </div>-->
       <div>
         <strong v-if="hasProfessorRole">Professor view</strong>
-        <strong v-else-if="hasResearchAssistantRole">ResearchAssistant view</strong>
+        <strong v-else-if="hasTeachingAssistantRole">TeachingAssistant view</strong>
         <strong v-else-if="hasStudentRole">Student view</strong>
         <strong v-else>The roles are not assigned.</strong>
       </div>
@@ -138,7 +138,7 @@ import {custosService} from "../../store/util/custos.util";
 import config from "../../../config";
 
 const clientRoleProfessor = config.value('clientRoleProfessor');
-const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
+const clientRoleTeachingAssistant = config.value('clientRoleTeachingAssistant');
 const clientRoleStudent = config.value('clientRoleStudent');
 
 export default {
@@ -199,8 +199,8 @@ export default {
     hasProfessorRole() {
       return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleProfessor) >= 0;
     },
-    hasResearchAssistantRole() {
-      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleResearchAssistant) >= 0;
+    hasTeachingAssistantRole() {
+      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleTeachingAssistant) >= 0;
     },
     hasStudentRole() {
       return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleStudent) >= 0;

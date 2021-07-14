@@ -6,7 +6,7 @@
       </router-link>
     </template>
     <table-overlay-info :rows="5" :columns="1" :data="assignments"
-                        v-if="hasStudentRole || hasResearchAssistantRole || hasProfessorRole">
+                        v-if="hasStudentRole || hasTeachingAssistantRole || hasProfessorRole">
       <div v-for="(assignment, assignmentIndex) in assignments" :key="assignmentIndex">
         <div style="background-color: #f9f9f9;padding: 15px;margin-bottom: 10px;border-radius: 10px;">
           <div style="display: flex; flex-direction: row;">
@@ -137,7 +137,7 @@
                           </div>
                           <div v-else>
                             <b-button
-                                v-if="(hasProfessorRole || hasResearchAssistantRole) && hasPermission(studentSubmission.submission, permissionTypeViewer)"
+                                v-if="(hasProfessorRole || hasTeachingAssistantRole) && hasPermission(studentSubmission.submission, permissionTypeViewer)"
                                 variant="link" size="sm"
                                 v-on:click="addNewGrading(assignment, studentSubmission.submission)">
                               + Create grading
@@ -277,7 +277,7 @@
             <!--                  </ul>-->
 
             <!--                  <b-button-->
-            <!--                      v-if="(hasProfessorRole || hasResearchAssistantRole) && hasPermission(submission, permissionTypeViewer)"-->
+            <!--                      v-if="(hasProfessorRole || hasTeachingAssistantRole) && hasPermission(submission, permissionTypeViewer)"-->
             <!--                      variant="link" size="sm"-->
             <!--                      v-on:click="addNewGrading(assignment, submission)">-->
             <!--                    + Create new submission grading-->
@@ -328,11 +328,11 @@ const entityTypeIdSubmission = config.value('entityTypeIdSubmission');
 const entityTypeIdGrading = config.value('entityTypeIdGrading');
 
 const clientRoleProfessor = config.value('clientRoleProfessor');
-const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
+const clientRoleTeachingAssistant = config.value('clientRoleTeachingAssistant');
 const clientRoleStudent = config.value('clientRoleStudent');
 
 const groupIdStudent = config.value('groupIdStudent');
-const groupIdResearchAssistant = config.value('groupIdResearchAssistant');
+const groupIdTeachingAssistant = config.value('groupIdTeachingAssistant');
 
 const permissionTypeViewer = config.value('permissionTypeViewer');
 const permissionTypeEditor = config.value('permissionTypeEditor');
@@ -362,7 +362,7 @@ export default {
   },
   computed: {
     title() {
-      if (this.hasStudentRole || this.hasResearchAssistantRole || this.hasProfessorRole) {
+      if (this.hasStudentRole || this.hasTeachingAssistantRole || this.hasProfessorRole) {
         return "Assignments";
       } else {
         return "Unauthorized";
@@ -392,8 +392,8 @@ export default {
     hasProfessorRole() {
       return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleProfessor) >= 0;
     },
-    hasResearchAssistantRole() {
-      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleResearchAssistant) >= 0;
+    hasTeachingAssistantRole() {
+      return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleTeachingAssistant) >= 0;
     },
     hasStudentRole() {
       return this.currentUser && this.currentUser.realmRoles.indexOf(clientRoleStudent) >= 0;
@@ -539,7 +539,7 @@ export default {
           entityId: submission.entityId,
           clientId: this.clientId,
           permissionTypeId: permissionTypeViewer,
-          groupIds: [groupIdResearchAssistant],
+          groupIds: [groupIdTeachingAssistant],
           usernames: [assignment.ownerId],
         });
       }
@@ -557,7 +557,7 @@ export default {
           entityId: grading.entityId,
           clientId: this.clientId,
           permissionTypeId: permissionTypeViewer,
-          groupIds: [groupIdResearchAssistant],
+          groupIds: [groupIdTeachingAssistant],
           usernames: [assignment.ownerId],
         });
       }
