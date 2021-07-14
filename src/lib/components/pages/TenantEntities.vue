@@ -130,7 +130,7 @@
                           </div>
                         </div>
                         <template #modal-footer="{close}">
-                          <b-button variant="primary" size="sm"
+                          <b-button variant="primary" size="sm" v-if="studentSubmission.grading"
                                     v-on:click="saveGrading(assignment, studentSubmission.submission, studentSubmission.grading);close()">
                             Save Grading
                           </b-button>
@@ -292,7 +292,7 @@ const clientRoleResearchAssistant = config.value('clientRoleResearchAssistant');
 const clientRoleStudent = config.value('clientRoleStudent');
 
 const groupIdStudent = config.value('groupIdStudent');
-// const groupIdResearchAssistant = config.value('groupIdResearchAssistant');
+const groupIdResearchAssistant = config.value('groupIdResearchAssistant');
 
 const permissionTypeViewer = config.value('permissionTypeViewer');
 const permissionTypeEditor = config.value('permissionTypeEditor');
@@ -496,7 +496,8 @@ export default {
           entityId: submission.entityId,
           clientId: this.clientId,
           permissionTypeId: permissionTypeViewer,
-          groupIds: [groupIdStudent]
+          groupIds: [groupIdResearchAssistant],
+          usernames: [assignment.ownerId],
         });
       }
 
@@ -513,6 +514,7 @@ export default {
           entityId: grading.entityId,
           clientId: this.clientId,
           permissionTypeId: permissionTypeViewer,
+          groupIds: [groupIdResearchAssistant],
           usernames: [assignment.ownerId],
         });
       }
@@ -642,6 +644,13 @@ export default {
       if (this.entities) {
         for (let i = 0; i < this.entities.length; i++) {
           const entity = {...this.entities[i]};
+
+          this.$store.dispatch("sharing/userHasAccess", {
+            clientId: this.clientId,
+            entityId: entity.entityId,
+            permissionTypeId: permissionTypeViewer,
+            username: this.currentUsername
+          });
 
           this.$store.dispatch("sharing/userHasAccess", {
             clientId: this.clientId,
