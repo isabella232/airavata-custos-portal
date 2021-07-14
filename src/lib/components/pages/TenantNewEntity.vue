@@ -1,5 +1,5 @@
 <template>
-  <TenantHome title="New Appointment" :breadcrumb-links="breadcrumbLinks" :errors="errors">
+  <TenantHome title="New Assignment" :breadcrumb-links="breadcrumbLinks" :errors="errors">
     <template #header-right>
       <b-button variant="primary" v-on:click="create">Create</b-button>
     </template>
