@@ -44,125 +44,226 @@
             <strong>Due Date</strong> : {{ assignment.fullTextJson.dueDate }}
           </div>
           <div>
-            <ul class="submission-ul">
-              <li v-for="(submission, submissionIndex) in assignment.fullTextJson.submissions" :key="submissionIndex">
-                <div v-if="!submission.edit">
-                  <div>
-                    {{ submission.fullTextJson.text }}
-                  </div>
-                  <div style="display: flex; flex-direction: row;">
-                    <small class="text-left" style="flex: 1;padding-top: 14px;color: #495057;">
-                      {{ submission.createdAt }} by
-                      <router-link :to="`/tenants/${clientId}/users/${submission.ownerId}`" v-slot="{href, navigate}">
-                        <b-link :href="href" v-on:click="navigate">{{ submission.ownerId }}</b-link>
-                      </router-link>
-                    </small>
-                    <div>
-                      <b-button variant="link" size="sm" v-if="hasPermission(submission, permissionTypeEditor)"
-                                v-on:click="onClickEditEntity(submission)" v-b-tooltip.hover title="Edit">
-                        <b-icon icon="pencil"/>
-                      </b-button>
-                      <b-button variant="link" size="sm" v-if="hasPermission(submission, permissionTypeEditor)"
-                                v-b-modal="`modal-submission-share-${submission.entityId}`" v-b-tooltip.hover
-                                title="Share">
-                        <b-icon icon="share"/>
-                      </b-button>
-                      <modal-share-entity :entity-id="submission.entityId" :client-id="clientId"
-                                          :modal-id="`modal-submission-share-${submission.entityId}`"
-                                          title="Share Student's Submission"/>
 
-                      <button-overlay :show="processingDelete[submission.entityId]">
-                        <b-button variant="link" size="sm" v-on:click="onClickDelete(submission)"
-                                  v-b-tooltip.hover title="Delete">
-                          <b-icon icon="trash"/>
-                        </b-button>
-                      </button-overlay>
-                    </div>
-                  </div>
-                  <ul class="gradings-ul">
-                    <li v-for="(grading, gradingIndex) in submission.fullTextJson.gradings"
-                        :key="gradingIndex">
-                      <div v-if="!grading.edit">
-                        <div>
-                          <strong>Grade : </strong>{{ grading.fullTextJson.grade }}
-                        </div>
-                        <div>
-                          <strong>Comment : </strong>{{ grading.fullTextJson.comment }}
-                        </div>
-                        <div style="display: flex; flex-direction: row;">
-                          <small class="text-left" style="flex: 1;padding-top: 14px;color: #495057;">
-                            {{ grading.createdAt }} by
-                            <router-link :to="`/tenants/${clientId}/users/${grading.ownerId}`"
-                                         v-slot="{href, navigate}">
-                              <b-link :href="href" v-on:click="navigate">{{ grading.ownerId }}</b-link>
-                            </router-link>
-                          </small>
-                          <div v-if="hasPermission(grading, permissionTypeEditor)">
-                            <b-button variant="link" size="sm" v-on:click="onClickEditEntity(grading)" v-b-tooltip.hover
-                                      title="Edit">
-                              <b-icon icon="pencil"/>
-                            </b-button>
-                            <b-button variant="link" size="sm" v-if="hasPermission(grading, permissionTypeEditor)"
-                                      v-b-modal="`modal-share-${grading.entityId}`" v-b-tooltip.hover
-                                      title="Share">
-                              <b-icon icon="share"/>
-                            </b-button>
-                            <modal-share-entity :entity-id="grading.entityId" :client-id="clientId"
-                                                :modal-id="`modal-share-${grading.entityId}`"
-                                                title="Share Student's Submission"/>
 
-                            <button-overlay :show="processingDelete[grading.entityId]">
-                              <b-button variant="link" size="sm" v-on:click="onClickDelete(grading)"
-                                        v-b-tooltip.hover title="Delete">
-                                <b-icon icon="trash"/>
-                              </b-button>
-                            </button-overlay>
+            <div v-if="hasStudentRole">
+              <div v-if="mySubmission(assignment).hasSubmitted">
+                <b-button variant="link" v-b-modal="`submission-modal-${assignment.entityId}`">
+                  View Submission
+                </b-button>
+              </div>
+              <div v-else>
+                <b-button variant="link"
+                          v-on:click="addNewSubmission(assignment);$bvModal.show(`submission-modal-${assignment.entityId}`);">
+                  Create New Submission
+                </b-button>
+              </div>
+              <b-modal :id="`submission-modal-${assignment.entityId}`">
+                <template #modal-title>
+                  Submission By {{ mySubmission(assignment).submission.ownerId }}
+                </template>
+                <div v-if="mySubmission(assignment).submission">
+                  <b-form-textarea size="sm" :disabled="!mySubmission(assignment).submission.edit"
+                                   v-model="entitiesMap[mySubmission(assignment).submission.entityId].fullTextJson.text"/>
+                </div>
+                <template #modal-footer="{close}">
+                  <b-button variant="primary" v-if="mySubmission(assignment).submission.edit"
+                            v-on:click="saveSubmission(assignment, mySubmission(assignment).submission);close();">
+                    Save
+                  </b-button>
+                  <b-button variant="secondary" v-on:click="close();">
+                    Close
+                  </b-button>
+                </template>
+              </b-modal>
+            </div>
+
+            <b-table-simple v-else>
+              <b-thead>
+                <b-th>Student</b-th>
+                <b-th>Status</b-th>
+                <b-th>Grade</b-th>
+                <b-th>Comments</b-th>
+                <b-th></b-th>
+              </b-thead>
+              <b-tbody>
+                <b-tr v-for="(studentSubmission, studentSubmissionIndex) in studentSubmissions(assignment)"
+                      :key="studentSubmissionIndex">
+                  <b-td>{{ studentSubmission.studentId }}</b-td>
+                  <b-td>
+                    <template v-if="studentSubmission.hasGraded">Graded</template>
+                    <template v-else-if="studentSubmission.hasSubmitted">Submitted</template>
+                    <template v-else>Not Submitted</template>
+                  </b-td>
+                  <b-td>{{ studentSubmission.grade }}</b-td>
+                  <b-td>{{ studentSubmission.comment }}</b-td>
+                  <b-td>
+                    <div v-if="studentSubmission.submission">
+                      <b-button variant="link" v-b-modal="`submission-modal-${studentSubmission.submission.entityId}`">
+                        View Submission
+                      </b-button>
+                      <b-modal :id="`submission-modal-${studentSubmission.submission.entityId}`">
+                        <template #modal-title>
+                          Submission By {{ studentSubmission.submission.ownerId }}
+                        </template>
+                        <div>
+                          <b-form-textarea size="sm" disabled
+                                           v-model="entitiesMap[studentSubmission.submission.entityId].fullTextJson.text"/>
+                          <div v-if="studentSubmission.grading">
+                            <div class="pt-3">
+                              <b-form-select :options="['A+', 'A', 'A-','B+', 'B', 'B-','C+', 'C', 'C-','D', 'F']"
+                                             size="sm"
+                                             v-model="entitiesMap[studentSubmission.grading.entityId].fullTextJson.grade"/>
+                            </div>
+                            <div class="pt-3">
+                              <b-form-input size="sm"
+                                            v-model="entitiesMap[studentSubmission.grading.entityId].fullTextJson.comment"/>
+                            </div>
+                          </div>
+                          <div v-else>
+                            <b-button
+                                v-if="(hasProfessorRole || hasResearchAssistantRole) && hasPermission(studentSubmission.submission, permissionTypeViewer)"
+                                variant="link" size="sm"
+                                v-on:click="addNewGrading(assignment, studentSubmission.submission)">
+                              + Create grading
+                            </b-button>
                           </div>
                         </div>
-                      </div>
-                      <div v-else>
-                        <div>
-                          <b-form-input size="sm" v-model="entitiesMap[grading.entityId].fullTextJson.grade"/>
-                          <b-form-input size="sm" v-model="entitiesMap[grading.entityId].fullTextJson.comment"/>
-                        </div>
-                        <div class="mt-3">
+                        <template #modal-footer="{close}">
                           <b-button variant="primary" size="sm"
-                                    v-on:click="saveGrading(assignment, submission, grading);">
-                            Save
+                                    v-on:click="saveGrading(assignment, studentSubmission.submission, studentSubmission.grading);close()">
+                            Save Grading
                           </b-button>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
+                          <b-button variant="secondary" v-on:click="close()">
+                            close
+                          </b-button>
+                        </template>
+                      </b-modal>
+                    </div>
+                  </b-td>
+                </b-tr>
+              </b-tbody>
+            </b-table-simple>
 
-                  <b-button
-                      v-if="(hasProfessorRole || hasResearchAssistantRole) && hasPermission(submission, permissionTypeViewer)"
-                      variant="link" size="sm"
-                      v-on:click="addNewGrading(assignment, submission)">
-                    + Create new submission grading
-                  </b-button>
+            <!--            <ul class="submission-ul">-->
+            <!--              <li v-for="(submission, submissionIndex) in assignment.fullTextJson.submissions" :key="submissionIndex">-->
+            <!--                <div v-if="!submission.edit">-->
+            <!--                  <div>-->
+            <!--                    {{ submission.fullTextJson.text }}-->
+            <!--                  </div>-->
+            <!--                  <div style="display: flex; flex-direction: row;">-->
+            <!--                    <small class="text-left" style="flex: 1;padding-top: 14px;color: #495057;">-->
+            <!--                      {{ submission.createdAt }} by-->
+            <!--                      <router-link :to="`/tenants/${clientId}/users/${submission.ownerId}`" v-slot="{href, navigate}">-->
+            <!--                        <b-link :href="href" v-on:click="navigate">{{ submission.ownerId }}</b-link>-->
+            <!--                      </router-link>-->
+            <!--                    </small>-->
+            <!--                    <div>-->
+            <!--                      <b-button variant="link" size="sm" v-if="hasPermission(submission, permissionTypeEditor)"-->
+            <!--                                v-on:click="onClickEditEntity(submission)" v-b-tooltip.hover title="Edit">-->
+            <!--                        <b-icon icon="pencil"/>-->
+            <!--                      </b-button>-->
+            <!--                      <b-button variant="link" size="sm" v-if="hasPermission(submission, permissionTypeEditor)"-->
+            <!--                                v-b-modal="`modal-submission-share-${submission.entityId}`" v-b-tooltip.hover-->
+            <!--                                title="Share">-->
+            <!--                        <b-icon icon="share"/>-->
+            <!--                      </b-button>-->
+            <!--                      <modal-share-entity :entity-id="submission.entityId" :client-id="clientId"-->
+            <!--                                          :modal-id="`modal-submission-share-${submission.entityId}`"-->
+            <!--                                          title="Share Student's Submission"/>-->
+
+            <!--                      <button-overlay :show="processingDelete[submission.entityId]">-->
+            <!--                        <b-button variant="link" size="sm" v-on:click="onClickDelete(submission)"-->
+            <!--                                  v-b-tooltip.hover title="Delete">-->
+            <!--                          <b-icon icon="trash"/>-->
+            <!--                        </b-button>-->
+            <!--                      </button-overlay>-->
+            <!--                    </div>-->
+            <!--                  </div>-->
+            <!--                  <ul class="gradings-ul">-->
+            <!--                    <li v-for="(grading, gradingIndex) in submission.fullTextJson.gradings"-->
+            <!--                        :key="gradingIndex">-->
+            <!--                      <div v-if="!grading.edit">-->
+            <!--                        <div>-->
+            <!--                          <strong>Grade : </strong>{{ grading.fullTextJson.grade }}-->
+            <!--                        </div>-->
+            <!--                        <div>-->
+            <!--                          <strong>Comment : </strong>{{ grading.fullTextJson.comment }}-->
+            <!--                        </div>-->
+            <!--                        <div style="display: flex; flex-direction: row;">-->
+            <!--                          <small class="text-left" style="flex: 1;padding-top: 14px;color: #495057;">-->
+            <!--                            {{ grading.createdAt }} by-->
+            <!--                            <router-link :to="`/tenants/${clientId}/users/${grading.ownerId}`"-->
+            <!--                                         v-slot="{href, navigate}">-->
+            <!--                              <b-link :href="href" v-on:click="navigate">{{ grading.ownerId }}</b-link>-->
+            <!--                            </router-link>-->
+            <!--                          </small>-->
+            <!--                          <div v-if="hasPermission(grading, permissionTypeEditor)">-->
+            <!--                            <b-button variant="link" size="sm" v-on:click="onClickEditEntity(grading)" v-b-tooltip.hover-->
+            <!--                                      title="Edit">-->
+            <!--                              <b-icon icon="pencil"/>-->
+            <!--                            </b-button>-->
+            <!--                            <b-button variant="link" size="sm" v-if="hasPermission(grading, permissionTypeEditor)"-->
+            <!--                                      v-b-modal="`modal-share-${grading.entityId}`" v-b-tooltip.hover-->
+            <!--                                      title="Share">-->
+            <!--                              <b-icon icon="share"/>-->
+            <!--                            </b-button>-->
+            <!--                            <modal-share-entity :entity-id="grading.entityId" :client-id="clientId"-->
+            <!--                                                :modal-id="`modal-share-${grading.entityId}`"-->
+            <!--                                                title="Share Student's Submission"/>-->
+
+            <!--                            <button-overlay :show="processingDelete[grading.entityId]">-->
+            <!--                              <b-button variant="link" size="sm" v-on:click="onClickDelete(grading)"-->
+            <!--                                        v-b-tooltip.hover title="Delete">-->
+            <!--                                <b-icon icon="trash"/>-->
+            <!--                              </b-button>-->
+            <!--                            </button-overlay>-->
+            <!--                          </div>-->
+            <!--                        </div>-->
+            <!--                      </div>-->
+            <!--                      <div v-else>-->
+            <!--                        <div>-->
+            <!--                          <b-form-input size="sm" v-model="entitiesMap[grading.entityId].fullTextJson.grade"/>-->
+            <!--                          <b-form-input size="sm" v-model="entitiesMap[grading.entityId].fullTextJson.comment"/>-->
+            <!--                        </div>-->
+            <!--                        <div class="mt-3">-->
+            <!--                          <b-button variant="primary" size="sm"-->
+            <!--                                    v-on:click="saveGrading(assignment, submission, grading);">-->
+            <!--                            Save-->
+            <!--                          </b-button>-->
+            <!--                        </div>-->
+            <!--                      </div>-->
+            <!--                    </li>-->
+            <!--                  </ul>-->
+
+            <!--                  <b-button-->
+            <!--                      v-if="(hasProfessorRole || hasResearchAssistantRole) && hasPermission(submission, permissionTypeViewer)"-->
+            <!--                      variant="link" size="sm"-->
+            <!--                      v-on:click="addNewGrading(assignment, submission)">-->
+            <!--                    + Create new submission grading-->
+            <!--                  </b-button>-->
 
 
-                </div>
-                <div v-else>
-                  <div>
-                    <b-form-textarea size="sm" v-model="entitiesMap[submission.entityId].fullTextJson.text"/>
-                  </div>
-                  <div class="mt-3">
-                    <b-button variant="primary" size="sm"
-                              v-on:click="saveSubmission(assignment, submission);">
-                      Save
-                    </b-button>
-                  </div>
-                </div>
-              </li>
-            </ul>
-            <b-button
-                v-if="hasStudentRole && hasPermission(assignment, permissionTypeViewer) && !hasAlreadySubmitted(assignment)"
-                variant="link" size="sm"
-                v-on:click="addNewSubmission(assignment)">
-              + Create new submission
-            </b-button>
+            <!--                </div>-->
+            <!--                <div v-else>-->
+            <!--                  <div>-->
+            <!--                    <b-form-textarea size="sm" v-model="entitiesMap[submission.entityId].fullTextJson.text"/>-->
+            <!--                  </div>-->
+            <!--                  <div class="mt-3">-->
+            <!--                    <b-button variant="primary" size="sm"-->
+            <!--                              v-on:click="saveSubmission(assignment, submission);">-->
+            <!--                      Save-->
+            <!--                    </b-button>-->
+            <!--                  </div>-->
+            <!--                </div>-->
+            <!--              </li>-->
+            <!--            </ul>-->
+            <!--            <b-button-->
+            <!--                v-if="hasStudentRole && hasPermission(assignment, permissionTypeViewer) && !hasAlreadySubmitted(assignment)"-->
+            <!--                variant="link" size="sm"-->
+            <!--                v-on:click="addNewSubmission(assignment)">-->
+            <!--              + Create new submission-->
+            <!--            </b-button>-->
           </div>
         </div>
       </div>
@@ -222,7 +323,7 @@ export default {
   computed: {
     title() {
       if (this.hasStudentRole || this.hasResearchAssistantRole || this.hasProfessorRole) {
-        return "Appointments";
+        return "Assignments";
       } else {
         return "Unauthorized";
       }
@@ -232,6 +333,9 @@ export default {
     },
     assignments() {
       return this.assignmentEntityIds.map(entityId => this.getEntity({entityId}));
+    },
+    students() {
+      return this.$store.getters["user/getUsers"]({groupId: groupIdStudent, clientId: this.clientId});
     },
     entities() {
       return this.$store.getters["entity/getEntities"]({clientId: this.clientId, ownerId: this.currentUsername})
@@ -256,6 +360,55 @@ export default {
     }
   },
   methods: {
+    mySubmission(assignment) {
+      let submission = null;
+      let grading = null;
+      for (let i = 0; assignment && i < assignment.fullTextJson.submissions.length; i++) {
+        if (assignment.fullTextJson.submissions[i].ownerId === this.currentUsername) {
+          submission = assignment.fullTextJson.submissions[i];
+          if (submission.fullTextJson.gradings.length > 0) {
+            grading = submission.fullTextJson.gradings[0];
+          }
+        }
+      }
+
+      return {
+        studentId: this.currentUsername,
+        hasSubmitted: !!submission && submission.saved,
+        hasGraded: !!grading && grading.saved,
+        grade: !!grading && grading.saved ? grading.fullTextJson.grade : "",
+        comment: !!grading && grading.saved ? grading.fullTextJson.comment : "",
+        submission,
+        grading
+      }
+    },
+    studentSubmissions(assignment) {
+      const studentSubmissionMap = {};
+      for (let i = 0; assignment && i < assignment.fullTextJson.submissions.length; i++) {
+        const submission = assignment.fullTextJson.submissions[i];
+        const studentId = assignment.fullTextJson.submissions[i].ownerId;
+        studentSubmissionMap[studentId] = submission;
+      }
+
+      return !this.students ? null : this.students.map(({username}) => {
+        const studentId = username;
+        const submission = studentSubmissionMap[studentId];
+        let grading = null;
+        if (submission && submission.fullTextJson.gradings.length > 0) {
+          grading = submission.fullTextJson.gradings[0];
+        }
+
+        return {
+          studentId,
+          hasSubmitted: !!submission && submission.saved,
+          hasGraded: !!grading && grading.saved,
+          grade: !!grading && grading.saved ? grading.fullTextJson.grade : "",
+          comment: !!grading && grading.saved ? grading.fullTextJson.comment : "",
+          submission,
+          grading
+        }
+      });
+    },
     hasAlreadySubmitted() {
       // if (assignment && assignment.fullTextJson.submissions) {
       //   for (let i = 0; i < assignment.fullTextJson.submissions.length; i++) {
@@ -282,7 +435,8 @@ export default {
             "assignmentId": assignment.entityId,
             "text": "",
             "gradings": []
-          }
+          },
+          ownerId: this.currentUsername
         },
         [assignment.entityId]: {
           ...this.entitiesMap[assignment.entityId],
@@ -479,6 +633,7 @@ export default {
     },
     refreshData() {
       this.$store.dispatch("entity/fetchEntities", {clientId: this.clientId, ownerId: this.currentUsername});
+      this.$store.dispatch("user/fetchUsers", {groupId: groupIdStudent, clientId: this.clientId});
     },
     resetData() {
       this.entitiesMap = {};
