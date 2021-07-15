@@ -1,6 +1,7 @@
 <template>
-  <div class="w-100">
-    <div class="w-100" :style="`display: flex;padding: 10px 40px;background-color:${headerColor};`">
+  <div class="w-100" :style="`background-color:${headerColor};`">
+
+    <div class="w-100" :style="`display: flex;padding: 10px 40px;background-color:#f9f9f9;`">
       <div style="flex: 1;">
         <!--        <div style="font-size: 1.4rem;" v-if="tenant">{{ tenant.name }}</div>-->
         <Breadcrumb :links="commonBreadcrumbLinks.concat(breadcrumbLinks)"/>
@@ -171,7 +172,7 @@ export default {
         return "#aed583";
       }
 
-      return "#f9f9f9";
+      return "";
     },
     commonBreadcrumbLinks() {
       const _breadcrumbLinks = [
