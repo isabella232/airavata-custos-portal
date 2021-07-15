@@ -124,7 +124,7 @@
                         <div>
                           <b-form-textarea size="sm" disabled
                                            v-model="entitiesMap[studentSubmission.submission.entityId].fullTextJson.text"/>
-                          <div v-if="studentSubmission.grading">
+                          <div v-if="studentSubmission.grading && !studentSubmission.hasGradePublished">
                             <div class="pt-3">
                               <b-form-select :options="['A+', 'A', 'A-','B+', 'B', 'B-','C+', 'C', 'C-','D', 'F']"
                                              size="sm"
@@ -135,7 +135,7 @@
                                             v-model="entitiesMap[studentSubmission.grading.entityId].fullTextJson.comment"/>
                             </div>
                           </div>
-                          <div v-else>
+                          <div v-else-if="!studentSubmission.hasGradePublished">
                             <b-button
                                 v-if="(hasProfessorRole || hasTeachingAssistantRole) && hasPermission(studentSubmission.submission, permissionTypeViewer)"
                                 variant="link" size="sm"
@@ -145,7 +145,8 @@
                           </div>
                         </div>
                         <template #modal-footer="{close}">
-                          <b-button variant="primary" size="sm" v-if="studentSubmission.grading"
+                          <b-button variant="primary" size="sm"
+                                    v-if="studentSubmission.grading && !studentSubmission.hasGradePublished"
                                     v-on:click="saveGrading(assignment, studentSubmission.submission, studentSubmission.grading);close()">
                             Save Grading
                           </b-button>
@@ -470,6 +471,7 @@ export default {
         ...this.entitiesMap,
         [newSubmissionEntityId]: {
           entityId: newSubmissionEntityId,
+          name: newSubmissionEntityId,
           type: entityTypeIdSubmission,
           saved: false,
           edit: true,
@@ -498,6 +500,7 @@ export default {
         ...this.entitiesMap,
         [newGradingEntityId]: {
           entityId: newGradingEntityId,
+          name: newGradingEntityId,
           type: entityTypeIdGrading,
           saved: false,
           edit: true,
