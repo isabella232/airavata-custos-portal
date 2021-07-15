@@ -62,7 +62,7 @@ import config from "../../../config";
 const groupIdStudent = config.value('groupIdStudent');
 const groupIdTeachingAssistant = config.value('groupIdTeachingAssistant');
 
-// const permissionTypeViewer = config.value('permissionTypeViewer');
+const permissionTypeViewer = config.value('permissionTypeViewer');
 const permissionTypeEditor = config.value('permissionTypeEditor');
 // const permissionTypeShare = config.value('permissionTypeShare');
 
@@ -80,8 +80,7 @@ export default {
       name: null,
       fullTextJson: {
         "description": "",
-        "dueDate": "",
-        "submissions": []
+        "dueDate": ""
       },
       entityTypeId: "ASSIGNMENT",
       inputFieldsList: ["name", "entityTypeId"]
@@ -154,7 +153,14 @@ export default {
             entityId: entityId,
             clientId: this.clientId,
             permissionTypeId: permissionTypeEditor,
-            groupIds: [groupIdStudent, groupIdTeachingAssistant]
+            groupIds: [groupIdTeachingAssistant]
+          });
+
+          await this.$store.dispatch("sharing/shareEntity", {
+            entityId: entityId,
+            clientId: this.clientId,
+            permissionTypeId: permissionTypeViewer,
+            groupIds: [groupIdStudent]
           });
 
           await this.$router.push(`/tenants/${this.clientId}/entities`);
