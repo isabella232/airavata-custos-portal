@@ -10,7 +10,8 @@
           <div class="pt-3">
             <label class="form-label" for="fullTextJson.title">Title</label>
             <b-form-input
-                v-model="fullTextJson.title"
+                v-model="name"
+                :state="inputState.name"
                 id="fullTextJson.title"
                 trim
                 size="sm">
@@ -76,9 +77,8 @@ export default {
 
       // availableProfessors: ["Dr. Aruna", "Dr. Ruwan", "Dr. Marlon"],
 
-      // name: null,
+      name: null,
       fullTextJson: {
-        "title": "",
         "description": "",
         "dueDate": "",
         "submissions": []
@@ -88,9 +88,6 @@ export default {
     };
   },
   computed: {
-    name() {
-      return this.title;
-    },
     clientId() {
       return this.$route.params.clientId;
     },
@@ -136,7 +133,7 @@ export default {
       }
     },
     async create() {
-      this.makeFormVisited()
+      this.makeFormVisited();
 
       if (this.isFormValid) {
         this.processing = true;
@@ -148,7 +145,7 @@ export default {
             entityId: entityId,
             clientId: this.clientId,
             name: this.name,
-            fullText: JSON.stringify(this.fullTextJson),
+            fullText: JSON.stringify({...this.fullTextJson, title: this.name}),
             type: this.entityTypeId,
             ownerId: this.$store.getters["auth/currentUsername"]
           });
