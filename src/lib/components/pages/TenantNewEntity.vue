@@ -89,7 +89,7 @@ export default {
   },
   computed: {
     name() {
-      return `custos-student-portal-assignment-${window.performance.now()}`;
+      return this.title;
     },
     clientId() {
       return this.$route.params.clientId;
@@ -142,7 +142,7 @@ export default {
         this.processing = true;
 
         try {
-          const entityId = `${this.clientId}_${window.performance.now()}`;
+          const entityId = `assignment_${window.performance.now()}`;
 
           await this.$store.dispatch("entity/createEntity", {
             entityId: entityId,

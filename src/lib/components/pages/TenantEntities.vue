@@ -465,7 +465,7 @@ export default {
       return false;
     },
     addNewSubmission(assignment) {
-      const newSubmissionEntityId = `${assignment.entityId}_${window.performance.now()}`;
+      const newSubmissionEntityId = `submission_${window.performance.now()}`;
       this.entitiesMap = {
         ...this.entitiesMap,
         [newSubmissionEntityId]: {
@@ -493,7 +493,7 @@ export default {
       };
     },
     addNewGrading(assignment, submission) {
-      const newGradingEntityId = `${submission.entityId}_${window.performance.now()}`;
+      const newGradingEntityId = `grading_${window.performance.now()}`;
       this.entitiesMap = {
         ...this.entitiesMap,
         [newGradingEntityId]: {
@@ -594,7 +594,7 @@ export default {
         await this.$store.dispatch("entity/updateEntity", {
           entityId: entity.entityId,
           clientId: this.clientId,
-          name: `custos-health-submission-${window.performance.now()}`,
+          name: entity.name,
           fullText: JSON.stringify(entity.fullTextJson),
           type: entity.type,
           ownerId: entity.ownerId
@@ -620,7 +620,7 @@ export default {
         await this.$store.dispatch("entity/createEntity", {
           entityId: entity.entityId,
           clientId: this.clientId,
-          name: `custos-health-submission-${window.performance.now()}`,
+          name: entity.name,
           fullText: JSON.stringify(entity.fullTextJson),
           type: entity.type,
           ownerId: this.$store.getters["auth/currentUsername"]
