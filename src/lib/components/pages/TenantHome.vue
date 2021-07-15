@@ -1,6 +1,6 @@
 <template>
   <div class="w-100">
-    <div class="w-100 bg-light" style="display: flex;padding: 10px 40px;">
+    <div class="w-100" :style="`display: flex;padding: 10px 40px;background-color:${headerColor};`">
       <div style="flex: 1;">
         <!--        <div style="font-size: 1.4rem;" v-if="tenant">{{ tenant.name }}</div>-->
         <Breadcrumb :links="commonBreadcrumbLinks.concat(breadcrumbLinks)"/>
@@ -162,6 +162,17 @@ export default {
     return {}
   },
   computed: {
+    headerColor() {
+      if (this.hasProfessorRole) {
+        return "#91d1fa";
+      } else if (this.hasTeachingAssistantRole) {
+        return "#fff18a";
+      } else if (this.hasStudentRole) {
+        return "#aed583";
+      }
+
+      return "#f9f9f9";
+    },
     commonBreadcrumbLinks() {
       const _breadcrumbLinks = [
         {to: `/tenants/${this.appTenant.clientId}/entities`, name: "Home"}
