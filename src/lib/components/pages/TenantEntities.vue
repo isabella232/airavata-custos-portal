@@ -187,7 +187,7 @@
             </b-table-simple>
 
             <!--            <ul class="submission-ul">-->
-            <!--              <li v-for="(submission, submissionIndex) in assignment.fullTextJson.submissions" :key="submissionIndex">-->
+            <!--              <li v-for="(submission, submissionIndex) in assignment.submissions" :key="submissionIndex">-->
             <!--                <div v-if="!submission.edit">-->
             <!--                  <div>-->
             <!--                    {{ submission.fullTextJson.text }}-->
@@ -222,7 +222,7 @@
             <!--                    </div>-->
             <!--                  </div>-->
             <!--                  <ul class="gradings-ul">-->
-            <!--                    <li v-for="(grading, gradingIndex) in submission.fullTextJson.gradings"-->
+            <!--                    <li v-for="(grading, gradingIndex) in submission.gradings"-->
             <!--                        :key="gradingIndex">-->
             <!--                      <div v-if="!grading.edit">-->
             <!--                        <div>-->
@@ -404,11 +404,11 @@ export default {
     mySubmission(assignment) {
       let submission = null;
       let grading = null;
-      for (let i = 0; assignment && i < assignment.fullTextJson.submissions.length; i++) {
-        if (assignment.fullTextJson.submissions[i].ownerId === this.currentUsername) {
-          submission = assignment.fullTextJson.submissions[i];
-          if (submission.fullTextJson.gradings.length > 0) {
-            grading = submission.fullTextJson.gradings[0];
+      for (let i = 0; assignment && i < assignment.submissions.length; i++) {
+        if (assignment.submissions[i].ownerId === this.currentUsername) {
+          submission = assignment.submissions[i];
+          if (submission.gradings.length > 0) {
+            grading = submission.gradings[0];
           }
         }
       }
@@ -426,9 +426,9 @@ export default {
     },
     studentSubmissions(assignment) {
       const studentSubmissionMap = {};
-      for (let i = 0; assignment && i < assignment.fullTextJson.submissions.length; i++) {
-        const submission = assignment.fullTextJson.submissions[i];
-        const studentId = assignment.fullTextJson.submissions[i].ownerId;
+      for (let i = 0; assignment && i < assignment.submissions.length; i++) {
+        const submission = assignment.submissions[i];
+        const studentId = assignment.submissions[i].ownerId;
         studentSubmissionMap[studentId] = submission;
       }
 
@@ -436,8 +436,8 @@ export default {
         const studentId = username;
         const submission = studentSubmissionMap[studentId];
         let grading = null;
-        if (submission && submission.fullTextJson.gradings.length > 0) {
-          grading = submission.fullTextJson.gradings[0];
+        if (submission && submission.gradings.length > 0) {
+          grading = submission.gradings[0];
         }
 
         return {
@@ -453,9 +453,9 @@ export default {
       });
     },
     hasAlreadySubmitted() {
-      // if (assignment && assignment.fullTextJson.submissions) {
-      //   for (let i = 0; i < assignment.fullTextJson.submissions.length; i++) {
-      //     if (assignment.fullTextJson.submissions[i].ownerId === this.currentUsername) {
+      // if (assignment && assignment.submissions) {
+      //   for (let i = 0; i < assignment.submissions.length; i++) {
+      //     if (assignment.submissions[i].ownerId === this.currentUsername) {
       //       return true;
       //     }
       //   }
@@ -477,19 +477,14 @@ export default {
           edit: true,
           fullTextJson: {
             "assignmentId": assignment.entityId,
-            "text": "",
-            "gradings": []
+            "text": ""
           },
           ownerId: this.currentUsername
         },
         [assignment.entityId]: {
           ...this.entitiesMap[assignment.entityId],
           fullTextJson: {
-            ...this.entitiesMap[assignment.entityId].fullTextJson,
-            submissions: [
-              ...this.entitiesMap[assignment.entityId].fullTextJson.submissions,
-              newSubmissionEntityId
-            ]
+            ...this.entitiesMap[assignment.entityId].fullTextJson
           }
         }
       };
@@ -515,11 +510,7 @@ export default {
         [submission.entityId]: {
           ...this.entitiesMap[submission.entityId],
           fullTextJson: {
-            ...this.entitiesMap[submission.entityId].fullTextJson,
-            gradings: [
-              ...this.entitiesMap[submission.entityId].fullTextJson.gradings,
-              newGradingEntityId
-            ]
+            ...this.entitiesMap[submission.entityId].fullTextJson
           }
         }
       };
@@ -643,6 +634,28 @@ export default {
         });
       }
     },
+    getSubmissions({assignmentId}) {
+      const submissions = [];
+      for (const entityId in this.entitiesMap) {
+        const entity = this.entitiesMap[entityId];
+        if (entity.type === entityTypeIdSubmission && entity.fullTextJson.assignmentId === assignmentId) {
+          submissions.push(this.getEntity({entityId}));
+        }
+      }
+
+      return submissions;
+    },
+    getGradings({submissionId}) {
+      const gradings = [];
+      for (const entityId in this.entitiesMap) {
+        const entity = this.entitiesMap[entityId];
+        if (entity.type === entityTypeIdGrading && entity.fullTextJson.submissionId === submissionId) {
+          gradings.push(this.getEntity({entityId}));
+        }
+      }
+
+      return gradings;
+    },
     getEntity({entityId}) {
       let entity = this.entitiesMap[entityId];
       if (!entity) {
@@ -651,17 +664,17 @@ export default {
         entity = {
           ...entity,
           fullTextJson: {
-            ...entity.fullTextJson,
-            submissions: entity.fullTextJson.submissions.map(entityId => this.getEntity({entityId})).filter(entity => !!entity),
-          }
+            ...entity.fullTextJson
+          },
+          submissions: this.getSubmissions({assignmentId: entityId})
         }
       } else if (entity.type === entityTypeIdSubmission) {
         entity = {
           ...entity,
           fullTextJson: {
-            ...entity.fullTextJson,
-            gradings: entity.fullTextJson.gradings.map(entityId => this.getEntity({entityId})).filter(entity => !!entity),
-          }
+            ...entity.fullTextJson
+          },
+          gradings: this.getGradings({submissionId: entityId})
         }
       } else {
         entity = {

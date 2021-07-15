@@ -80,8 +80,7 @@ export default {
       name: null,
       fullTextJson: {
         "description": "",
-        "dueDate": "",
-        "submissions": []
+        "dueDate": ""
       },
       entityTypeId: "ASSIGNMENT",
       inputFieldsList: ["name", "entityTypeId"]
