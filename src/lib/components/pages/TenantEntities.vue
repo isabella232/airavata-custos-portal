@@ -46,17 +46,34 @@
           <div>
 
 
-            <div v-if="hasStudentRole">
+            <div v-if="hasStudentRole" class="pt-4">
               <div v-if="mySubmission(assignment).hasSubmitted">
-                <b-button variant="link" v-b-modal="`submission-modal-${assignment.entityId}`">
-                  View Submission
-                </b-button>
-                <div v-if="mySubmission(assignment).hasGraded" style="display: flex; flex-direction: row;">
+                <div style="display: flex; flex-direction: row;">
+                  <div>
+                    <b-button variant="secondary" v-b-modal="`submission-modal-${assignment.entityId}`">
+                      View Submission
+                    </b-button>
+                  </div>
+                  <div
+                      v-if="mySubmission(assignment).hasSubmitted && hasPermission(mySubmission(assignment).submission, permissionTypeEditor)">
+                    <b-button variant="link" size="sm"
+                              v-b-tooltip.hover title="Share"
+                              v-b-modal="`modal-share-${mySubmission(assignment).submission.entityId}`">
+                      <b-icon icon="share"/>
+                      Share Submission
+                    </b-button>
+                    <modal-share-entity :entity-id="mySubmission(assignment).submission.entityId" :client-id="clientId"
+                                        :modal-id="`modal-share-${mySubmission(assignment).submission.entityId}`"
+                                        title="Share the Submission"/>
+                  </div>
+                </div>
+                <div v-if="mySubmission(assignment).hasGradePublished" class="pt-4"
+                     style="display: flex; flex-direction: row;">
                   <div class="pr-4">
-                    <strong>Grade : </strong> {{ mySubmission(assignment).grade }}
+                    <strong>Grade : </strong> {{ mySubmission(assignment).publishedGradings[0].fullTextJson.grade }}
                   </div>
                   <div>
-                    <strong>Comment : </strong> {{ mySubmission(assignment).grade }}
+                    <strong>Comment : </strong> {{ mySubmission(assignment).publishedGradings[0].fullTextJson.comment }}
                   </div>
                 </div>
               </div>
@@ -90,8 +107,8 @@
               <b-thead>
                 <b-th>Student</b-th>
                 <b-th>Status</b-th>
-                <b-th>Grade</b-th>
-                <b-th>Comments</b-th>
+                <b-th>Submission</b-th>
+                <b-th>Grading</b-th>
                 <b-th></b-th>
               </b-thead>
               <b-tbody>
@@ -104,15 +121,8 @@
                     <template v-else-if="studentSubmission.hasSubmitted">Submitted</template>
                     <template v-else>Not Submitted</template>
                   </b-td>
-                  <b-td>{{ studentSubmission.grade }}</b-td>
-                  <b-td>{{ studentSubmission.comment }}</b-td>
                   <b-td>
                     <div v-if="studentSubmission.submission">
-                      <b-button variant="secondary" size="sm" class="mr-3"
-                                v-if="hasProfessorRole && studentSubmission.hasGraded && !studentSubmission.hasGradePublished"
-                                v-on:click="publishGrading(assignment, studentSubmission.submission, studentSubmission.grading)">
-                        Release Grade
-                      </b-button>
                       <b-button variant="secondary" size="sm"
                                 v-b-modal="`submission-modal-${studentSubmission.submission.entityId}`">
                         View Submission
@@ -124,39 +134,16 @@
                         <div>
                           <b-form-textarea size="sm" disabled
                                            v-model="entitiesMap[studentSubmission.submission.entityId].fullTextJson.text"/>
-                          <div v-if="studentSubmission.grading && !studentSubmission.hasGradePublished">
-                            <div class="pt-3">
-                              <b-form-select :options="['A+', 'A', 'A-','B+', 'B', 'B-','C+', 'C', 'C-','D', 'F']"
-                                             size="sm"
-                                             v-model="entitiesMap[studentSubmission.grading.entityId].fullTextJson.grade"/>
-                            </div>
-                            <div class="pt-3">
-                              <b-form-input size="sm"
-                                            v-model="entitiesMap[studentSubmission.grading.entityId].fullTextJson.comment"/>
-                            </div>
-                          </div>
-                          <div v-else-if="!studentSubmission.hasGradePublished">
-                            <b-button
-                                v-if="(hasProfessorRole || hasTeachingAssistantRole) && hasPermission(studentSubmission.submission, permissionTypeViewer)"
-                                variant="link" size="sm"
-                                v-on:click="addNewGrading(assignment, studentSubmission.submission)">
-                              + Create grading
-                            </b-button>
-                          </div>
                         </div>
                         <template #modal-footer="{close}">
-                          <b-button variant="primary" size="sm"
-                                    v-if="studentSubmission.grading && !studentSubmission.hasGradePublished"
-                                    v-on:click="saveGrading(assignment, studentSubmission.submission, studentSubmission.grading);close()">
-                            Save Grading
-                          </b-button>
                           <b-button variant="secondary" v-on:click="close()">
                             close
                           </b-button>
                         </template>
                       </b-modal>
 
-                      <template v-if="studentSubmission.hasSubmitted">
+                      <template
+                          v-if="studentSubmission.hasSubmitted && hasPermission(studentSubmission.submission, permissionTypeEditor)">
                         <b-button variant="link" size="sm"
                                   v-b-tooltip.hover title="Share"
                                   v-b-modal="`modal-share-${studentSubmission.submission.entityId}`">
@@ -167,18 +154,141 @@
                                             :modal-id="`modal-share-${studentSubmission.submission.entityId}`"
                                             title="Share the Submission"/>
                       </template>
+                    </div>
+                  </b-td>
+                  <b-td>
+                    <div v-if="studentSubmission.submission">
+                      <ul class="gradings-ul">
+                        <li v-for="(grading, gradingIndex) in (studentSubmission.hasGradePublished ? studentSubmission.publishedGradings : studentSubmission.submission.gradings)"
+                            :key="gradingIndex">
+                          <div v-if="grading.edit">
+                            <div class="pt-3">
+                              <b-form-select :options="['A+', 'A', 'A-','B+', 'B', 'B-','C+', 'C', 'C-','D', 'F']"
+                                             size="sm"
+                                             v-model="entitiesMap[grading.entityId].fullTextJson.grade"/>
+                            </div>
+                            <div class="pt-3">
+                              <b-form-textarea size="sm"
+                                               v-model="entitiesMap[grading.entityId].fullTextJson.comment"/>
+                            </div>
+                            <div class="pt-3">
+                              <b-button variant="primary" size="sm" class="mr-3"
+                                        v-on:click="saveGrading(assignment, studentSubmission.submission, grading);">
+                                Save Grading
+                              </b-button>
+                              <b-button variant="secondary" size="sm"
+                                        v-on:click="closeNewGrading(grading)">
+                                Cancel
+                              </b-button>
+                            </div>
+                          </div>
+                          <div v-else style="display: flex; flex-direction: row;">
+                            <div style="flex: 1;">
+                              <div>
+                                <strong>Grade : </strong> {{ grading.fullTextJson.grade }}
+                              </div>
+                              <div>
+                                <strong>Comment : </strong> {{ grading.fullTextJson.comment }}
+                              </div>
+                              <div>
+                                <small class="text-left" style="line-height: 31px;color: #495057;">
+                                  {{ grading.createdAt }} by
+                                  <router-link :to="`/tenants/${clientId}/users/${grading.ownerId}`"
+                                               v-slot="{href, navigate}">
+                                    <b-link :href="href" v-on:click="navigate">{{ grading.ownerId }}</b-link>
+                                  </router-link>
+                                </small>
+                              </div>
+                            </div>
+                            <div>
+                              <div v-if="hasProfessorRole && !studentSubmission.hasGradePublished">
+                                <b-button variant="secondary" size="sm" class="mr-3"
+                                          v-on:click="publishGrading(assignment, studentSubmission.submission, grading)">
+                                  Release Grade
+                                </b-button>
+                              </div>
+                              <div v-if="hasPermission(grading, permissionTypeEditor)">
+                                <b-button variant="link" size="sm"
+                                          v-b-tooltip.hover title="Share"
+                                          v-b-modal="`modal-assignment-share-${grading.entityId}`">
+                                  <b-icon icon="share"/>
+                                  Share Grading
+                                </b-button>
+                                <modal-share-entity :entity-id="grading.entityId" :client-id="clientId"
+                                                    :modal-id="`modal-assignment-share-${grading.entityId}`"
+                                                    title="Share the assignment"/>
+                              </div>
+                              <div v-if="hasPermission(grading, permissionTypeEditor)">
+                                <button-overlay :show="processingDelete[grading.entityId]">
+                                  <b-button variant="link" size="sm" v-on:click="onClickDelete(grading)"
+                                            v-b-tooltip.hover title="Delete">
+                                    <b-icon icon="trash"/>
+                                    Delete Grading
+                                  </b-button>
+                                </button-overlay>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      </ul>
 
-                      <template v-if="studentSubmission.hasGraded">
-                        <b-button variant="link" size="sm"
-                                  v-b-tooltip.hover title="Share"
-                                  v-b-modal="`modal-share-${studentSubmission.grading.entityId}`">
-                          <b-icon icon="share"/>
-                          Share Grading
+                      <div v-if="!studentSubmission.hasGradePublished">
+                        <b-button
+                            v-if="(hasProfessorRole || hasTeachingAssistantRole) && hasPermission(studentSubmission.submission, permissionTypeViewer)"
+                            variant="link" size="sm"
+                            v-on:click="addNewGrading(assignment, studentSubmission.submission)">
+                          + Create grading
                         </b-button>
-                        <modal-share-entity :entity-id="studentSubmission.grading.entityId" :client-id="clientId"
-                                            :modal-id="`modal-share-${studentSubmission.grading.entityId}`"
-                                            title="Share the Grading"/>
-                      </template>
+                      </div>
+
+                      <!--                      <b-button variant="secondary" size="sm"-->
+                      <!--                                v-b-modal="`submission-modal-${studentSubmission.submission.entityId}`">-->
+                      <!--                        View Submission-->
+                      <!--                      </b-button>-->
+                      <!--                      <b-modal :id="`submission-modal-${studentSubmission.submission.entityId}`">-->
+                      <!--                        <template #modal-title>-->
+                      <!--                          Submission By {{ studentSubmission.submission.ownerId }}-->
+                      <!--                        </template>-->
+                      <!--                        <div>-->
+                      <!--                          <b-form-textarea size="sm" disabled-->
+                      <!--                                           v-model="entitiesMap[studentSubmission.submission.entityId].fullTextJson.text"/>-->
+                      <!--                          <div v-if="studentSubmission.grading && !studentSubmission.hasGradePublished">-->
+                      <!--                            <div class="pt-3">-->
+                      <!--                              <b-form-select :options="['A+', 'A', 'A-','B+', 'B', 'B-','C+', 'C', 'C-','D', 'F']"-->
+                      <!--                                             size="sm"-->
+                      <!--                                             v-model="entitiesMap[studentSubmission.grading.entityId].fullTextJson.grade"/>-->
+                      <!--                            </div>-->
+                      <!--                            <div class="pt-3">-->
+                      <!--                              <b-form-input size="sm"-->
+                      <!--                                            v-model="entitiesMap[studentSubmission.grading.entityId].fullTextJson.comment"/>-->
+                      <!--                            </div>-->
+                      <!--                          </div>-->
+
+                      <!--                        </div>-->
+                      <!--                        <template #modal-footer="{close}">-->
+                      <!--                          <b-button variant="primary" size="sm"-->
+                      <!--                                    v-if="studentSubmission.grading && !studentSubmission.hasGradePublished"-->
+                      <!--                                    v-on:click="saveGrading(assignment, studentSubmission.submission, studentSubmission.grading);close()">-->
+                      <!--                            Save Grading-->
+                      <!--                          </b-button>-->
+                      <!--                          <b-button variant="secondary" v-on:click="close()">-->
+                      <!--                            close-->
+                      <!--                          </b-button>-->
+                      <!--                        </template>-->
+                      <!--                      </b-modal>-->
+
+                      <!--                      <template v-if="studentSubmission.hasSubmitted">-->
+                      <!--                        <b-button variant="link" size="sm"-->
+                      <!--                                  v-b-tooltip.hover title="Share"-->
+                      <!--                                  v-b-modal="`modal-share-${studentSubmission.submission.entityId}`">-->
+                      <!--                          <b-icon icon="share"/>-->
+                      <!--                          Share Submission-->
+                      <!--                        </b-button>-->
+                      <!--                        <modal-share-entity :entity-id="studentSubmission.submission.entityId" :client-id="clientId"-->
+                      <!--                                            :modal-id="`modal-share-${studentSubmission.submission.entityId}`"-->
+                      <!--                                            title="Share the Submission"/>-->
+                      <!--                      </template>-->
+
 
                     </div>
                   </b-td>
@@ -402,26 +512,25 @@ export default {
   },
   methods: {
     mySubmission(assignment) {
-      let submission = null;
-      let grading = null;
+      let submission;
+      let savedGradings;
+      let publishedGradings;
       for (let i = 0; assignment && i < assignment.submissions.length; i++) {
         if (assignment.submissions[i].ownerId === this.currentUsername) {
           submission = assignment.submissions[i];
-          if (submission.gradings.length > 0) {
-            grading = submission.gradings[0];
-          }
+          savedGradings = submission.gradings.filter(({saved}) => saved);
+          publishedGradings = submission.gradings.filter(({saved, fullTextJson: {published}}) => saved && published);
         }
       }
 
       return {
         studentId: this.currentUsername,
         hasSubmitted: !!submission && submission.saved,
-        hasGraded: !!grading && grading.saved,
-        hasGradePublished: !!grading && grading.saved && grading.fullTextJson.published,
-        grade: !!grading && grading.saved ? grading.fullTextJson.grade : "",
-        comment: !!grading && grading.saved ? grading.fullTextJson.comment : "",
+        hasGraded: !!savedGradings && savedGradings.length > 0,
+        hasGradePublished: !!publishedGradings && publishedGradings.length > 0,
         submission,
-        grading
+        savedGradings,
+        publishedGradings
       }
     },
     studentSubmissions(assignment) {
@@ -435,20 +544,21 @@ export default {
       return !this.students ? null : this.students.map(({username}) => {
         const studentId = username;
         const submission = studentSubmissionMap[studentId];
-        let grading = null;
-        if (submission && submission.gradings.length > 0) {
-          grading = submission.gradings[0];
+        let savedGradings;
+        let publishedGradings;
+        if (submission) {
+          savedGradings = submission.gradings.filter(({saved}) => saved);
+          publishedGradings = submission.gradings.filter(({saved, fullTextJson: {published}}) => saved && published);
         }
 
         return {
           studentId,
           hasSubmitted: !!submission && submission.saved,
-          hasGraded: !!grading && grading.saved,
-          hasGradePublished: !!grading && grading.saved && grading.fullTextJson.published,
-          grade: !!grading && grading.saved ? grading.fullTextJson.grade : "",
-          comment: !!grading && grading.saved ? grading.fullTextJson.comment : "",
+          hasGraded: !!savedGradings && savedGradings.length > 0,
+          hasGradePublished: !!publishedGradings && publishedGradings.length > 0,
           submission,
-          grading
+          savedGradings,
+          publishedGradings
         }
       });
     },
@@ -489,6 +599,12 @@ export default {
         }
       };
     },
+    closeNewGrading({entityId}) {
+      this.entitiesMap = {
+        ...this.entitiesMap,
+        [entityId]: null
+      };
+    },
     addNewGrading(assignment, submission) {
       const newGradingEntityId = `grading_${window.performance.now()}`;
       this.entitiesMap = {
@@ -505,12 +621,6 @@ export default {
             "grade": "",
             "comment": "",
             "published": false
-          }
-        },
-        [submission.entityId]: {
-          ...this.entitiesMap[submission.entityId],
-          fullTextJson: {
-            ...this.entitiesMap[submission.entityId].fullTextJson
           }
         }
       };
@@ -638,7 +748,7 @@ export default {
       const submissions = [];
       for (const entityId in this.entitiesMap) {
         const entity = this.entitiesMap[entityId];
-        if (entity.type === entityTypeIdSubmission && entity.fullTextJson.assignmentId === assignmentId) {
+        if (entity && entity.type === entityTypeIdSubmission && entity.fullTextJson.assignmentId === assignmentId) {
           submissions.push(this.getEntity({entityId}));
         }
       }
@@ -649,7 +759,7 @@ export default {
       const gradings = [];
       for (const entityId in this.entitiesMap) {
         const entity = this.entitiesMap[entityId];
-        if (entity.type === entityTypeIdGrading && entity.fullTextJson.submissionId === submissionId) {
+        if (entity && entity.type === entityTypeIdGrading && entity.fullTextJson.submissionId === submissionId) {
           gradings.push(this.getEntity({entityId}));
         }
       }
@@ -796,10 +906,15 @@ ul.prescriptions-ul {
   padding: 0px;
 }
 
+ul.gradings-ul {
+  padding: 0px;
+  margin: 0px;
+}
+
 ul.gradings-ul > li {
   list-style: none;
   padding: 10px;
-  background-color: #bee5eb;
+  background-color: #e3e3e3;
   border-radius: 5px;
   margin: 10px;
 }
