@@ -216,7 +216,7 @@
                                 </b-button>
                                 <modal-share-entity :entity-id="grading.entityId" :client-id="clientId"
                                                     :modal-id="`modal-assignment-share-${grading.entityId}`"
-                                                    title="Share the assignment"/>
+                                                    title="Share the grading"/>
                               </div>
                               <div v-if="hasPermission(grading, permissionTypeEditor)">
                                 <button-overlay :show="processingDelete[grading.entityId]">
